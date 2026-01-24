@@ -448,7 +448,7 @@
             });
         }
 
-        // Control de ubicación (el resto del código de ubicación sigue igual)
+        // Control de ubicación
         L.Control.UbicacionButton = L.Control.extend({
             options: { position: 'topright' },
             onAdd: function(map) {
@@ -508,9 +508,7 @@
             return 'PROYECTO';
         }
 
-        // ==============================================
         // CARGA DE DATOS DESDE data.json
-        // ==============================================
         let datos = [];
 
         fetch('data.json')
@@ -527,7 +525,7 @@
             })
             .catch(error => {
                 console.error('Error al cargar data.json:', error);
-                alert('No se pudo cargar los datos.\nVerifica que data.json esté en la misma carpeta que este HTML.');
+                alert('No se pudo cargar los datos.\nVerifica que data.json esté en la misma carpeta.');
                 document.getElementById('loadingOverlay').style.display = 'none';
             });
 
@@ -613,7 +611,13 @@
                     document.getElementById('loadingOverlay').style.display = 'none';
                     actualizarDistritos();
                     aplicarFiltros();
-                    
+
+                    // ==============================================
+                    // Líneas críticas: AGREGAR LAS CAPAS AL MAPA
+                    // ==============================================
+                    map.addLayer(mainDataLayer.clusterGroup);
+                    controlarVistaPorZoom();
+
                     if (mainDataLayer.markers.length > 0) {
                         const group = new L.featureGroup(mainDataLayer.markers);
                         map.fitBounds(group.getBounds().pad(0.1));
@@ -1087,10 +1091,7 @@
             window.searchDebounce = setTimeout(aplicarFiltros, 400);
         });
 
-        window.addEventListener('load', function() {
-            // El fetch ya se inicia automáticamente al cargar la página
-        });
+        // El fetch ya se inicia automáticamente al cargar la página
     </script>
 </body>
-
 </html>
