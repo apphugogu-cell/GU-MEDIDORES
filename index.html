@@ -610,14 +610,14 @@
                     aplicarFiltros();
 
                     // ==============================================
-                    // LÍNEAS QUE HACEN QUE SE VEAN LOS PUNTOS
+                    // ESTAS LÍNEAS SON LAS QUE FALTABAN: AGREGAR LAS CAPAS AL MAPA PARA QUE SE VEAN LOS PUNTOS
                     // ==============================================
-                    map.addLayer(mainDataLayer.clusterGroup);
-                    controlarVistaPorZoom();
+                    map.addLayer(mainDataLayer.clusterGroup);  // Muestra los clusters por defecto
+                    controlarVistaPorZoom();                   // Ajusta según el zoom actual
 
                     if (mainDataLayer.markers.length > 0) {
                         const group = new L.featureGroup(mainDataLayer.markers);
-                        map.fitBounds(group.getBounds().pad(0.1));
+                        map.fitBounds(group.getBounds().pad(0.1)); // Centra el mapa en los puntos
                     }
                 }
             }
