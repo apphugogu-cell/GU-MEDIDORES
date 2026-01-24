@@ -448,7 +448,6 @@
             });
         }
 
-        // Control de ubicación
         L.Control.UbicacionButton = L.Control.extend({
             options: { position: 'topright' },
             onAdd: function(map) {
@@ -483,7 +482,6 @@
         const ubicacionControl = new L.Control.UbicacionButton();
         ubicacionControl.addTo(map);
 
-        // Toggle leyenda
         document.getElementById('toggleLeyenda').addEventListener('click', function() {
             const leyenda = document.getElementById('leyenda');
             const icon = this.querySelector('i');
@@ -508,7 +506,6 @@
             return 'PROYECTO';
         }
 
-        // CARGA DE DATOS DESDE data.json
         let datos = [];
 
         fetch('data.json')
@@ -612,9 +609,7 @@
                     actualizarDistritos();
                     aplicarFiltros();
 
-                    // ==============================================
-                    // Líneas críticas: AGREGAR LAS CAPAS AL MAPA
-                    // ==============================================
+                    // AGREGAR LAS CAPAS AL MAPA PARA QUE SE VEAN LOS PUNTOS
                     map.addLayer(mainDataLayer.clusterGroup);
                     controlarVistaPorZoom();
 
@@ -1090,8 +1085,6 @@
             clearTimeout(window.searchDebounce);
             window.searchDebounce = setTimeout(aplicarFiltros, 400);
         });
-
-        // El fetch ya se inicia automáticamente al cargar la página
     </script>
 </body>
 </html>
