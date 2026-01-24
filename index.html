@@ -239,7 +239,7 @@
         }
     </style>
 </head>
-<body data-print-date="">
+<body>
     <div id="loadingOverlay">
         <div class="spinner"></div>
         <h2>Cargando puntos...</h2>
@@ -609,7 +609,9 @@
                     actualizarDistritos();
                     aplicarFiltros();
 
-                    // AGREGAR LAS CAPAS AL MAPA PARA QUE SE VEAN LOS PUNTOS
+                    // ==============================================
+                    // LÍNEAS QUE HACEN QUE SE VEAN LOS PUNTOS
+                    // ==============================================
                     map.addLayer(mainDataLayer.clusterGroup);
                     controlarVistaPorZoom();
 
