@@ -355,8 +355,7 @@
         var loadedFiles = [];
         var selectedMarkers = [];
         var modoClic = false;
-        var reporteData = [];
-        var internalDataLookup = {}; // Mapa de SUMINISTRO a datos de data.json
+        var internalDataLookup = {}; // { "12345678": {LATITUD: ..., LONGITUD: ..., ...} }
 
         var locationWatcher = null;
         var locationMarker = null;
@@ -466,14 +465,19 @@
                         var sheet = workbook.Sheets[workbook.SheetNames[0]];
                         json = XLSX.utils.sheet_to_json(sheet);
                     } else if (extension === 'csv') {
-                        json = XLSX.utils.sheet_to_json(XLSX.read(data, {type: 'string'}).Sheets['Sheet1']);
+                        var workbook = XLSX.read(data, {type: 'string'});
+                        json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                     } else {
                         alert('Formato no soportado: ' + extension);
                         return;
                     }
                     procesarDatos(file.name, json);
                 };
-                reader.readAsArrayBuffer(file); // Para XLSX, pero para CSV podría ser readAsText, pero usamos ArrayBuffer para compatibilidad
+                if (extension === 'csv') {
+                    reader.readAsText(file);
+                } else {
+                    reader.readAsArrayBuffer(file);
+                }
             });
             e.target.value = '';
         });
@@ -496,25 +500,42 @@
             let pointsMissingCoords = 0;
 
             data.forEach(row => {
-                let lat = row.LATITUD;
-                let lng = row.LONGITUD;
+                let lat = row.LATITUD || row.latitud || row.Latitud || row.LAT || row.lat;
+                let lng = row.LONGITUD || row.longitud || row.Longitud || row.LON || row.lon;
 
                 if (!lat || !lng) {
-                    const suministro = row.SUMINISTRO || row.ID; // Asumimos SUMINISTRO o ID como clave
-                    if (suministro && internalDataLookup[suministro]) {
-                        const internalRow = internalDataLookup[suministro];
-                        lat = internalRow.LATITUD;
-                        lng = internalRow.LONGITUD;
-                        // Copiar otros datos si es necesario
-                        row = { ...internalRow, ...row }; // Sobrescribir con datos del archivo cargado
+                    // Búsqueda robusta de la columna SUMINISTRO
+                    let suministroKey = null;
+                    const posibles = ['SUMINISTRO', 'suministro', 'Suministro', 'CODIGO', 'codigo', 'ID', 'id', 'NSS', 'nss'];
+                    for (const nombre of posibles) {
+                        if (row[nombre] !== undefined && row[nombre] !== null && row[nombre] !== '') {
+                            suministroKey = row[nombre].toString().trim();
+                            break;
+                        }
+                    }
+
+                    if (!suministroKey) {
+                        console.warn('No se encontró columna SUMINISTRO ni coordenadas en fila:', row);
+                        return;
+                    }
+
+                    if (internalDataLookup[suministroKey]) {
+                        const internalRow = internalDataLookup[suministroKey];
+                        lat = internalRow.LATITUD || internalRow.latitud || internalRow.Latitud;
+                        lng = internalRow.LONGITUD || internalRow.longitud || internalRow.Longitud;
+                        row = { ...internalRow, ...row }; // Fusionamos datos (Excel sobrescribe)
                         pointsMissingCoords++;
+                        console.log('Coordenadas encontradas para SUMINISTRO:', suministroKey);
                     } else {
-                        console.warn('No se encontró ubicación para suministro:', suministro);
+                        console.warn('SUMINISTRO no encontrado en data.json:', suministroKey);
                         return;
                     }
                 }
 
-                if (!lat || !lng) return; // Si aún no tiene coords, skip
+                if (!lat || !lng) {
+                    console.warn('Fila sin coordenadas válidas después de lookup:', row);
+                    return;
+                }
 
                 const actividadRaw = (row.ACTIVIDAD || '').toString().trim().toUpperCase();
                 let tipo = 'PROYECTO';
@@ -539,13 +560,13 @@
                 const popupContent = `
                     <div style="min-width:220px; font-size:13px;">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-                            <strong>ID:</strong> ${row.ID || 'N/D'}
-                            <span id="toggle-${row.ID || 'sinid'}" 
+                            <strong>ID / Suministro:</strong> ${row.ID || row.SUMINISTRO || 'N/D'}
+                            <span id="toggle-${row.ID || row.SUMINISTRO || 'sinid'}" 
                                   style="cursor:pointer; color:#3b82f6; font-size:16px; user-select:none;"
                                   onclick="toggleDetails(this)"> ▶</span>
                         </div>
                         
-                        <div id="details-${row.ID || 'sinid'}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #eee;">
+                        <div id="details-${row.ID || row.SUMINISTRO || 'sinid'}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #eee;">
                             ${datosOcultos.map(item => `
                                 <div style="margin:4px 0;">
                                     <strong>${item.label}:</strong> ${item.value}
@@ -571,7 +592,7 @@
             loadedFiles.push(fileEntry);
             actualizarDistritos();
             aplicarFiltros();
-            alert(`¡Listo! Cargados ${pointsProcessed} puntos del archivo ${filename}. (De ellos, ${pointsMissingCoords} usaron coordenadas de data.json vía SUMINISTRO)`);
+            alert(`¡Listo! Cargados ${pointsProcessed} puntos del archivo ${filename}.\nDe ellos, ${pointsMissingCoords} usaron coordenadas de data.json vía SUMINISTRO.`);
         }
 
         function toggleDetails(element) {
@@ -682,8 +703,8 @@
 
         function toggleSeleccionMarker(marker) {
             const props = marker.properties;
-            const key = props.ID ? props.ID : `${props.LATITUD}_${props.LONGITUD}`;
-            const index = selectedMarkers.findIndex(s => (s.ID ? s.ID : `${s.LATITUD}_${s.LONGITUD}`) === key);
+            const key = props.ID || props.SUMINISTRO || `${props.LATITUD}_${props.LONGITUD}`;
+            const index = selectedMarkers.findIndex(s => (s.ID || s.SUMINISTRO || `${s.LATITUD}_${s.LONGITUD}`) === key);
             if (index === -1) {
                 selectedMarkers.push(props);
                 marker.setStyle({fillColor: '#00ff00', radius: 9});
@@ -789,26 +810,18 @@
             document.getElementById('reporteModal').style.display = 'flex';
         }
 
-        function exportarReporteLocalidadExcel() {
-            alert("Exportación del reporte por localidad no implementada en esta versión.");
-        }
-
         function exportarSeleccionPDF() {
-            if (selectedMarkers.length === 0) {
-                alert("No hay puntos seleccionados.");
-                return;
-            }
-
+            if (selectedMarkers.length === 0) { alert("No hay puntos seleccionados."); return; }
             const doc = new jsPDF('l', 'mm', 'a4');
             doc.setFontSize(16);
             doc.text("Reporte de Puntos Seleccionados - Agua Potable", 14, 20);
             doc.setFontSize(12);
             doc.text(`Total: ${selectedMarkers.length} puntos | Fecha: ${new Date().toLocaleDateString('es-PE')}`, 14, 30);
 
-            const headers = [["N°", "ID", "Tipo", "Medidor", "Dirección", "Distrito", "Lat", "Lon"]];
+            const headers = [["N°", "ID/Suministro", "Tipo", "Medidor", "Dirección", "Distrito", "Lat", "Lon"]];
             const data = selectedMarkers.map((p, i) => [
                 i + 1,
-                p.ID || 'N/D',
+                p.ID || p.SUMINISTRO || 'N/D',
                 p.tipoFiltro || '—',
                 p.MEDIDOR || 'SIN',
                 p.DIRECCION || '',
@@ -817,25 +830,14 @@
                 parseFloat(p.LONGITUD).toFixed(6)
             ]);
 
-            doc.autoTable({
-                head: headers,
-                body: data,
-                startY: 40,
-                theme: 'grid',
-                headStyles: { fillColor: [29, 78, 216] }
-            });
-
+            doc.autoTable({ head: headers, body: data, startY: 40, theme: 'grid', headStyles: { fillColor: [29, 78, 216] } });
             doc.save("reporte_seleccionados.pdf");
         }
 
         function exportarSeleccionExcel() {
-            if (selectedMarkers.length === 0) {
-                alert("No hay puntos seleccionados.");
-                return;
-            }
-
+            if (selectedMarkers.length === 0) { alert("No hay puntos seleccionados."); return; }
             const data = selectedMarkers.map(p => ({
-                ID: p.ID || 'N/D',
+                ID_Suministro: p.ID || p.SUMINISTRO || 'N/D',
                 Tipo: p.tipoFiltro || '—',
                 Medidor: p.MEDIDOR || 'SIN MEDIDOR',
                 Direccion: p.DIRECCION || '',
@@ -853,10 +855,7 @@
         }
 
         function imprimirMapaNormal() {
-            if (loadedFiles.length === 0) {
-                alert("Primero carga un archivo Excel con puntos.");
-                return;
-            }
+            if (loadedFiles.length === 0) { alert("Primero carga un archivo."); return; }
             window.print();
         }
 
@@ -866,122 +865,65 @@
 
             if (isLocationActive) {
                 if (!navigator.geolocation) {
-                    alert('La geolocalización no está disponible en este navegador.');
+                    alert('Geolocalización no disponible.');
                     isLocationActive = false;
                     ubicacionControl.updateActiveState();
                     return;
                 }
-
-                firstLocationReceived = false;
-
                 locationWatcher = navigator.geolocation.watchPosition(
-                    function(position) {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        const accuracy = position.coords.accuracy;
-
+                    pos => {
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        const acc = pos.coords.accuracy;
                         if (!locationMarker) {
-                            locationMarker = L.marker([lat, lng], {
-                                icon: L.divIcon({
-                                    html: '<div style="background:#3b82f6;width:20px;height:20px;border-radius:50%;border:3px solid white;"></div>',
-                                    className: '',
-                                    iconSize: [20,20],
-                                    iconAnchor: [10,10]
-                                })
-                            }).addTo(map).bindPopup('Tu ubicación actual');
-                        } else {
-                            locationMarker.setLatLng([lat, lng]);
-                        }
-
+                            locationMarker = L.marker([lat, lng], {icon: L.divIcon({html: '<div style="background:#3b82f6;width:20px;height:20px;border-radius:50%;border:3px solid white;"></div>', className: '', iconSize: [20,20], iconAnchor: [10,10]})}).addTo(map).bindPopup('Tu ubicación');
+                        } else locationMarker.setLatLng([lat, lng]);
                         if (!locationAccuracyCircle) {
-                            locationAccuracyCircle = L.circle([lat, lng], {
-                                radius: accuracy,
-                                color: '#3b82f6',
-                                fillColor: '#93c5fd',
-                                fillOpacity: 0.2
-                            }).addTo(map);
-                        } else {
-                            locationAccuracyCircle.setLatLng([lat, lng]);
-                            locationAccuracyCircle.setRadius(accuracy);
-                        }
-
-                        if (!firstLocationReceived) {
-                            map.setView([lat, lng], 16);
-                            firstLocationReceived = true;
-                        }
+                            locationAccuracyCircle = L.circle([lat, lng], {radius: acc, color: '#3b82f6', fillColor: '#93c5fd', fillOpacity: 0.2}).addTo(map);
+                        } else { locationAccuracyCircle.setLatLng([lat, lng]); locationAccuracyCircle.setRadius(acc); }
+                        if (!firstLocationReceived) { map.setView([lat, lng], 16); firstLocationReceived = true; }
                     },
-                    function(error) {
-                        alert('Error al obtener ubicación: ' + error.message);
-                        isLocationActive = false;
-                        ubicacionControl.updateActiveState();
-                    },
+                    err => { alert('Error ubicación: ' + err.message); isLocationActive = false; ubicacionControl.updateActiveState(); },
                     { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
                 );
             } else {
                 if (locationWatcher) navigator.geolocation.clearWatch(locationWatcher);
                 if (locationMarker) map.removeLayer(locationMarker);
                 if (locationAccuracyCircle) map.removeLayer(locationAccuracyCircle);
-                locationMarker = null;
-                locationAccuracyCircle = null;
+                locationMarker = null; locationAccuracyCircle = null;
             }
         }
 
-        let tamanoPaquete = 20;
-        var grupos = {};
-
         function prepararAgrupamiento() {
             const todosMarkers = getAllVisibleMarkers();
-            if (todosMarkers.length < 5) {
-                alert("No hay suficientes puntos para agrupar (mínimo 5).");
-                return;
-            }
-
-            const input = prompt(
-                `¿Cuántos puntos por grupo deseas? (mínimo 5, máximo ${Math.floor(todosMarkers.length / 2)})\nValor por defecto: 20`,
-                "20"
-            );
-
+            if (todosMarkers.length < 5) { alert("Mínimo 5 puntos para agrupar."); return; }
+            const input = prompt(`¿Cuántos puntos por grupo? (5 - ${Math.floor(todosMarkers.length / 2)})\nDefault: 20`, "20");
             if (input === null) return;
-
-            const num = parseInt(input);
-            if (isNaN(num) || num < 5 || num > todosMarkers.length) {
-                alert("Número inválido. Usa un valor entre 5 y " + Math.floor(todosMarkers.length / 2));
-                return;
-            }
-
+            const num = parseInt(input) || 20;
+            if (num < 5 || num > todosMarkers.length / 2) { alert("Valor inválido."); return; }
             tamanoPaquete = num;
             agruparPuntosReal();
         }
 
+        let tamanoPaquete = 20;
+
         function agruparPuntosReal() {
             const todosMarkers = getAllVisibleMarkers();
-
             const numGrupos = Math.ceil(todosMarkers.length / tamanoPaquete);
-
-            const features = todosMarkers.map(m => {
-                return turf.point([parseFloat(m.properties.LONGITUD), parseFloat(m.properties.LATITUD)], m.properties);
-            });
-
+            const features = todosMarkers.map(m => turf.point([parseFloat(m.properties.LONGITUD), parseFloat(m.properties.LATITUD)], m.properties));
             const geojson = turf.featureCollection(features);
-
             const clustered = turf.clustersKmeans(geojson, { numberOfClusters: numGrupos });
-
             grupos = {};
-
             clustered.features.forEach((feat, idx) => {
                 const grupoId = feat.properties.cluster;
                 if (!grupos[grupoId]) grupos[grupoId] = [];
                 grupos[grupoId].push(todosMarkers[idx]);
-
                 todosMarkers[idx].properties.grupo = grupoId;
                 todosMarkers[idx].properties.colorGrupo = coloresGrupos[grupoId % coloresGrupos.length];
             });
-
             aplicarFiltros();
-
             mostrarSelectorGrupos(numGrupos);
-
-            alert(`Se crearon ${numGrupos} grupos de aproximadamente ${tamanoPaquete} puntos cada uno.\nUsa el selector para ver uno específico.`);
+            alert(`Creados ${numGrupos} grupos de ~${tamanoPaquete} puntos.`);
         }
 
         function mostrarSelectorGrupos(numGrupos) {
@@ -989,122 +931,72 @@
             modal.id = 'grupoModal';
             modal.className = 'modal';
             modal.style.display = 'flex';
-
-            let opciones = '<option value="todos">Mostrar Todos los Grupos</option>';
+            let opciones = '<option value="todos">Todos los Grupos</option>';
             for (let i = 0; i < numGrupos; i++) {
-                const cantidad = grupos[i] ? grupos[i].length : '?';
-                opciones += `<option value="${i}">Grupo ${i+1} (${cantidad} puntos)</option>`;
+                const cant = grupos[i] ? grupos[i].length : '?';
+                opciones += `<option value="${i}">Grupo ${i+1} (${cant} puntos)</option>`;
             }
-
             modal.innerHTML = `
                 <div class="modal-content" style="width:340px;">
                     <span class="close" onclick="this.closest('.modal').remove()">×</span>
-                    <h4>Seleccionar Grupo (${tamanoPaquete} aprox. por grupo)</h4>
-                    <select id="grupoSelect" onchange="mostrarGrupoSeleccionado()" style="width:100%; padding:8px; margin-bottom:15px;">
-                        ${opciones}
-                    </select>
-                    <button onclick="exportarGruposExcel()" style="width:100%; background:#f59e0b; color:white;">
-                        Exportar Todos los Grupos a Excel
-                    </button>
-                </div>
-            `;
-
+                    <h4>Seleccionar Grupo (~${tamanoPaquete} por grupo)</h4>
+                    <select id="grupoSelect" onchange="mostrarGrupoSeleccionado()" style="width:100%; padding:8px; margin-bottom:15px;">${opciones}</select>
+                    <button onclick="exportarGruposExcel()" style="width:100%; background:#f59e0b; color:white;">Exportar Todos los Grupos a Excel</button>
+                </div>`;
             document.body.appendChild(modal);
         }
 
         function mostrarGrupoSeleccionado() {
-            const select = document.getElementById('grupoSelect');
-            if (!select) return;
-
-            const valor = select.value;
-
+            const valor = document.getElementById('grupoSelect').value;
             loadedFiles.forEach(file => {
                 file.markers.forEach(m => {
-                    if (valor === 'todos' || m.properties.grupo == valor) {
-                        m.setStyle({ fillOpacity: 0.85 });
-                    } else {
-                        m.setStyle({ fillOpacity: 0.15 });
-                    }
+                    m.setStyle({ fillOpacity: (valor === 'todos' || m.properties.grupo == valor) ? 0.85 : 0.15 });
                 });
             });
-
-            map.eachLayer(layer => {
-                if (layer instanceof L.MarkerClusterGroup) {
-                    layer.refreshClusters();
-                }
-            });
+            map.eachLayer(l => { if (l instanceof L.MarkerClusterGroup) l.refreshClusters(); });
         }
 
         function exportarGruposExcel() {
-            if (Object.keys(grupos).length === 0) {
-                alert("Primero debes agrupar los puntos.");
-                return;
-            }
-
-            Object.keys(grupos).forEach(grupoId => {
-                const puntosGrupo = grupos[grupoId];
-                const data = puntosGrupo.map(m => m.properties);
-
+            if (Object.keys(grupos).length === 0) { alert("Primero agrupa los puntos."); return; }
+            Object.keys(grupos).forEach(g => {
+                const data = grupos[g].map(m => m.properties);
                 const ws = XLSX.utils.json_to_sheet(data);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, `Grupo ${parseInt(grupoId) + 1}`);
-                XLSX.writeFile(wb, `grupo_${parseInt(grupoId) + 1}_${data.length}_puntos.xlsx`);
+                XLSX.utils.book_append_sheet(wb, ws, `Grupo ${parseInt(g)+1}`);
+                XLSX.writeFile(wb, `grupo_${parseInt(g)+1}_${data.length}_puntos.xlsx`);
             });
-
-            alert("Todos los grupos han sido exportados como archivos Excel separados.");
+            alert("Grupos exportados como archivos Excel separados.");
         }
 
-        // ────────────────────────────────────────────────
-        // CARGA OBLIGATORIA DE data.json COMO DATA INTERNA
-        // ────────────────────────────────────────────────
-
+        // Carga de data.json como lookup interno
         function cargarDataJsonLocal() {
             var xhr = new XMLHttpRequest();
             xhr.open("GET", "data.json", true);
             xhr.responseType = "json";
-
             xhr.onload = function () {
-                if (xhr.status === 200) {
-                    console.log("data.json cargado correctamente. Registros:", xhr.response.length);
-                    var json = xhr.response;
-                    if (json && json.length > 0) {
-                        // Crear lookup por SUMINISTRO o ID
-                        json.forEach(row => {
-                            const key = row.SUMINISTRO || row.ID;
-                            if (key) {
-                                internalDataLookup[key] = row;
-                            }
-                        });
-                        alert(`¡Cargados ${json.length} registros internos desde data.json para lookup por SUMINISTRO!`);
-                        
-                        // Opcional: También cargarlos como un archivo inicial si quieres verlos en el mapa por defecto
-                        procesarDatos("data.json (interna)", json);
-                    } else {
-                        console.warn("data.json está vacío o no tiene registros válidos.");
-                        alert("data.json está vacío o no tiene datos válidos.");
-                    }
+                if (xhr.status === 200 && xhr.response && xhr.response.length > 0) {
+                    console.log("data.json cargado:", xhr.response.length, "registros");
+                    xhr.response.forEach(row => {
+                        const key = row.SUMINISTRO || row.ID || row.suministro || row.id;
+                        if (key) internalDataLookup[key.toString().trim()] = row;
+                    });
+                    alert(`¡data.json cargado como base interna! (${xhr.response.length} registros disponibles para lookup por SUMINISTRO)`);
+                    // Opcional: cargar también como puntos visibles
+                    // procesarDatos("data.json (base interna)", xhr.response);
                 } else {
-                    console.error("No se encontró o no se pudo leer data.json. Código:", xhr.status);
-                    alert("No se pudo cargar data.json.\nVerifica:\n1. Que se llame exactamente 'data.json'\n2. Que esté en la misma carpeta que este HTML\n3. Prueba abrir en Firefox (más permisivo que Chrome)");
+                    alert("No se pudo cargar data.json o está vacío.\nAsegúrate de que esté en la misma carpeta y se llame exactamente 'data.json'.");
                 }
             };
-
             xhr.onerror = function () {
-                console.error("Error de red o archivo no accesible:", xhr.statusText);
-                alert("Error al intentar leer data.json.\nAsegúrate de que el archivo exista y prueba con Firefox o un servidor local simple.");
+                alert("Error al cargar data.json. Prueba con Firefox o servidor local.");
             };
-
             xhr.send();
         }
 
-        // Ejecutar la carga al iniciar la página
-        window.addEventListener('load', function() {
-            cargarDataJsonLocal();
-        });
+        window.addEventListener('load', cargarDataJsonLocal);
 
         map.on('zoomend', controlarVistaPorZoom);
         document.getElementById('distritoFilter').addEventListener('change', aplicarFiltros);
-
     </script>
 </body>
 </html>
