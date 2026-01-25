@@ -229,7 +229,7 @@
                     <span class="leaflet-sidebar-close"><i class="fa fa-caret-left"></i></span>
                 </h1>
                 
-                <input type="file" id="excelFile" accept=".xlsx" multiple />
+                <input type="file" id="excelFile" accept=".xlsx,.csv" multiple />
                 
                 <select id="distritoFilter">
                     <option value="">Selecciona distrito</option>
@@ -356,6 +356,7 @@
         var selectedMarkers = [];
         var modoClic = false;
         var reporteData = [];
+        var internalDataLookup = {}; // Mapa de SUMINISTRO a datos de data.json
 
         var locationWatcher = null;
         var locationMarker = null;
@@ -457,13 +458,22 @@
             Array.from(files).forEach(file => {
                 var reader = new FileReader();
                 reader.onload = function(e) {
-                    var data = new Uint8Array(e.target.result);
-                    var workbook = XLSX.read(data, {type: 'array'});
-                    var sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    var json = XLSX.utils.sheet_to_json(sheet);
+                    var data = e.target.result;
+                    var extension = file.name.split('.').pop().toLowerCase();
+                    var json;
+                    if (extension === 'xlsx') {
+                        var workbook = XLSX.read(new Uint8Array(data), {type: 'array'});
+                        var sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        json = XLSX.utils.sheet_to_json(sheet);
+                    } else if (extension === 'csv') {
+                        json = XLSX.utils.sheet_to_json(XLSX.read(data, {type: 'string'}).Sheets['Sheet1']);
+                    } else {
+                        alert('Formato no soportado: ' + extension);
+                        return;
+                    }
                     procesarDatos(file.name, json);
                 };
-                reader.readAsArrayBuffer(file);
+                reader.readAsArrayBuffer(file); // Para XLSX, pero para CSV podría ser readAsText, pero usamos ArrayBuffer para compatibilidad
             });
             e.target.value = '';
         });
@@ -482,8 +492,29 @@
                 visible: true
             };
 
+            let pointsProcessed = 0;
+            let pointsMissingCoords = 0;
+
             data.forEach(row => {
-                if (!row.LATITUD || !row.LONGITUD) return;
+                let lat = row.LATITUD;
+                let lng = row.LONGITUD;
+
+                if (!lat || !lng) {
+                    const suministro = row.SUMINISTRO || row.ID; // Asumimos SUMINISTRO o ID como clave
+                    if (suministro && internalDataLookup[suministro]) {
+                        const internalRow = internalDataLookup[suministro];
+                        lat = internalRow.LATITUD;
+                        lng = internalRow.LONGITUD;
+                        // Copiar otros datos si es necesario
+                        row = { ...internalRow, ...row }; // Sobrescribir con datos del archivo cargado
+                        pointsMissingCoords++;
+                    } else {
+                        console.warn('No se encontró ubicación para suministro:', suministro);
+                        return;
+                    }
+                }
+
+                if (!lat || !lng) return; // Si aún no tiene coords, skip
 
                 const actividadRaw = (row.ACTIVIDAD || '').toString().trim().toUpperCase();
                 let tipo = 'PROYECTO';
@@ -493,7 +524,7 @@
                 else if (actividadRaw === 'IMPOSIBILIDAD') tipo = 'IMPOSIBILIDAD';
 
                 const color = getColor(tipo);
-                var marker = crearMarcador(row.LATITUD, row.LONGITUD, color);
+                var marker = crearMarcador(lat, lng, color);
                 
                 marker.properties = { ...row, tipoFiltro: tipo, color: color, filename: filename };
 
@@ -534,12 +565,13 @@
                 fileEntry.markers.push(marker);
                 fileEntry.clusterGroup.addLayer(marker);
                 fileEntry.individualLayer.addLayer(marker);
+                pointsProcessed++;
             });
 
             loadedFiles.push(fileEntry);
             actualizarDistritos();
             aplicarFiltros();
-            alert(`¡Listo! Cargados ${fileEntry.markers.length} puntos del archivo ${filename}.`);
+            alert(`¡Listo! Cargados ${pointsProcessed} puntos del archivo ${filename}. (De ellos, ${pointsMissingCoords} usaron coordenadas de data.json vía SUMINISTRO)`);
         }
 
         function toggleDetails(element) {
@@ -1023,7 +1055,7 @@
         }
 
         // ────────────────────────────────────────────────
-        // CARGA OBLIGATORIA DE data.json DESDE CARPETA LOCAL
+        // CARGA OBLIGATORIA DE data.json COMO DATA INTERNA
         // ────────────────────────────────────────────────
 
         function cargarDataJsonLocal() {
@@ -1036,69 +1068,17 @@
                     console.log("data.json cargado correctamente. Registros:", xhr.response.length);
                     var json = xhr.response;
                     if (json && json.length > 0) {
-                        const fileEntry = {
-                            filename: "data.json (carga local obligatoria)",
-                            data: json,
-                            markers: [],
-                            clusterGroup: L.markerClusterGroup({
-                                chunkedLoading: true,
-                                disableClusteringAtZoom: 16,
-                                maxClusterRadius: 50
-                            }),
-                            individualLayer: L.layerGroup(),
-                            visible: true
-                        };
-
+                        // Crear lookup por SUMINISTRO o ID
                         json.forEach(row => {
-                            if (!row.LATITUD || !row.LONGITUD) return;
-
-                            const actividadRaw = (row.ACTIVIDAD || '').toString().trim().toUpperCase();
-                            let tipo = 'PROYECTO';
-                            if (actividadRaw === 'A1') tipo = 'A1';
-                            else if (actividadRaw === 'A2') tipo = 'A2';
-                            else if (actividadRaw === 'A3') tipo = 'A3';
-                            else if (actividadRaw === 'IMPOSIBILIDAD') tipo = 'IMPOSIBILIDAD';
-
-                            const color = getColor(tipo);
-                            var marker = crearMarcador(row.LATITUD, row.LONGITUD, color);
-                            
-                            marker.properties = { ...row, tipoFiltro: tipo, color: color, filename: "data.json" };
-
-                            const popupContent = `
-                                <div style="min-width:220px; font-size:13px;">
-                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-                                        <strong>ID:</strong> ${row.ID || row.SUMINISTRO || 'N/D'}
-                                        <span id="toggle-${row.ID || row.SUMINISTRO || 'sinid'}" 
-                                              style="cursor:pointer; color:#3b82f6; font-size:16px; user-select:none;"
-                                              onclick="toggleDetails(this)"> ▶</span>
-                                    </div>
-                                    
-                                    <div id="details-${row.ID || row.SUMINISTRO || 'sinid'}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #eee;">
-                                        <strong>Actividad:</strong> ${row.ACTIVIDAD || '—'}<br>
-                                        <strong>Distrito:</strong> ${row.DISTRITO || '—'}<br>
-                                        <strong>Medidor:</strong> ${row.MEDIDOR || 'SIN MEDIDOR'}<br>
-                                        <strong>Dirección:</strong> ${row.DIRECCION || '—'}
-                                    </div>
-                                </div>
-                            `;
-
-                            marker.bindPopup(popupContent);
-
-                            marker.on('click', function(e) {
-                                if (modoClic) toggleSeleccionMarker(this);
-                                else map.openPopup(this.getPopup());
-                            });
-
-                            fileEntry.markers.push(marker);
-                            fileEntry.clusterGroup.addLayer(marker);
-                            fileEntry.individualLayer.addLayer(marker);
+                            const key = row.SUMINISTRO || row.ID;
+                            if (key) {
+                                internalDataLookup[key] = row;
+                            }
                         });
-
-                        loadedFiles.push(fileEntry);
-                        actualizarDistritos();
-                        aplicarFiltros();
-                        console.log(`Puntos de data.json añadidos: ${fileEntry.markers.length} marcadores`);
-                        alert(`¡Cargados ${fileEntry.markers.length} puntos desde data.json (local)!`);
+                        alert(`¡Cargados ${json.length} registros internos desde data.json para lookup por SUMINISTRO!`);
+                        
+                        // Opcional: También cargarlos como un archivo inicial si quieres verlos en el mapa por defecto
+                        procesarDatos("data.json (interna)", json);
                     } else {
                         console.warn("data.json está vacío o no tiene registros válidos.");
                         alert("data.json está vacío o no tiene datos válidos.");
@@ -1128,4 +1108,3 @@
     </script>
 </body>
 </html>
-
