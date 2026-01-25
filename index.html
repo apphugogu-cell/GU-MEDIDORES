@@ -121,6 +121,14 @@
             box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
         }
 
+        label[for="useJsonLookup"] {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            font-weight: bold;
+            color: #1d4ed8;
+        }
+
         #leyenda {
             position: absolute;
             bottom: 20px;
@@ -230,6 +238,11 @@
                 </h1>
                 
                 <input type="file" id="excelFile" accept=".xlsx,.csv" multiple />
+                
+                <label for="useJsonLookup">
+                    <input type="checkbox" id="useJsonLookup" checked>
+                    Usar data.json como base interna (para ubicar SUMINISTRO sin coordenadas)
+                </label>
                 
                 <select id="distritoFilter">
                     <option value="">Selecciona distrito</option>
@@ -355,7 +368,8 @@
         var loadedFiles = [];
         var selectedMarkers = [];
         var modoClic = false;
-        var internalDataLookup = {}; // { "12345678": {LATITUD: ..., LONGITUD: ..., ...} }
+        var internalDataLookup = {}; // Mapa de SUMINISTRO → datos de data.json
+        var useJsonLookup = true; // Controla si se usa data.json
 
         var locationWatcher = null;
         var locationMarker = null;
@@ -504,7 +518,8 @@
                 let lng = row.LONGITUD || row.longitud || row.Longitud || row.LON || row.lon;
 
                 if (!lat || !lng) {
-                    // Búsqueda robusta de la columna SUMINISTRO
+                    if (!useJsonLookup) return;
+
                     let suministroKey = null;
                     const posibles = ['SUMINISTRO', 'suministro', 'Suministro', 'CODIGO', 'codigo', 'ID', 'id', 'NSS', 'nss'];
                     for (const nombre of posibles) {
@@ -523,19 +538,15 @@
                         const internalRow = internalDataLookup[suministroKey];
                         lat = internalRow.LATITUD || internalRow.latitud || internalRow.Latitud;
                         lng = internalRow.LONGITUD || internalRow.longitud || internalRow.Longitud;
-                        row = { ...internalRow, ...row }; // Fusionamos datos (Excel sobrescribe)
+                        row = { ...internalRow, ...row };
                         pointsMissingCoords++;
-                        console.log('Coordenadas encontradas para SUMINISTRO:', suministroKey);
                     } else {
                         console.warn('SUMINISTRO no encontrado en data.json:', suministroKey);
                         return;
                     }
                 }
 
-                if (!lat || !lng) {
-                    console.warn('Fila sin coordenadas válidas después de lookup:', row);
-                    return;
-                }
+                if (!lat || !lng) return;
 
                 const actividadRaw = (row.ACTIVIDAD || '').toString().trim().toUpperCase();
                 let tipo = 'PROYECTO';
@@ -810,8 +821,16 @@
             document.getElementById('reporteModal').style.display = 'flex';
         }
 
+        function exportarReporteLocalidadExcel() {
+            alert("Exportación del reporte por localidad no implementada en esta versión.");
+        }
+
         function exportarSeleccionPDF() {
-            if (selectedMarkers.length === 0) { alert("No hay puntos seleccionados."); return; }
+            if (selectedMarkers.length === 0) {
+                alert("No hay puntos seleccionados.");
+                return;
+            }
+
             const doc = new jsPDF('l', 'mm', 'a4');
             doc.setFontSize(16);
             doc.text("Reporte de Puntos Seleccionados - Agua Potable", 14, 20);
@@ -830,12 +849,23 @@
                 parseFloat(p.LONGITUD).toFixed(6)
             ]);
 
-            doc.autoTable({ head: headers, body: data, startY: 40, theme: 'grid', headStyles: { fillColor: [29, 78, 216] } });
+            doc.autoTable({
+                head: headers,
+                body: data,
+                startY: 40,
+                theme: 'grid',
+                headStyles: { fillColor: [29, 78, 216] }
+            });
+
             doc.save("reporte_seleccionados.pdf");
         }
 
         function exportarSeleccionExcel() {
-            if (selectedMarkers.length === 0) { alert("No hay puntos seleccionados."); return; }
+            if (selectedMarkers.length === 0) {
+                alert("No hay puntos seleccionados.");
+                return;
+            }
+
             const data = selectedMarkers.map(p => ({
                 ID_Suministro: p.ID || p.SUMINISTRO || 'N/D',
                 Tipo: p.tipoFiltro || '—',
@@ -855,7 +885,10 @@
         }
 
         function imprimirMapaNormal() {
-            if (loadedFiles.length === 0) { alert("Primero carga un archivo."); return; }
+            if (loadedFiles.length === 0) {
+                alert("Primero carga un archivo Excel con puntos.");
+                return;
+            }
             window.print();
         }
 
@@ -865,65 +898,122 @@
 
             if (isLocationActive) {
                 if (!navigator.geolocation) {
-                    alert('Geolocalización no disponible.');
+                    alert('La geolocalización no está disponible en este navegador.');
                     isLocationActive = false;
                     ubicacionControl.updateActiveState();
                     return;
                 }
+
+                firstLocationReceived = false;
+
                 locationWatcher = navigator.geolocation.watchPosition(
-                    pos => {
-                        const lat = pos.coords.latitude;
-                        const lng = pos.coords.longitude;
-                        const acc = pos.coords.accuracy;
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        const accuracy = position.coords.accuracy;
+
                         if (!locationMarker) {
-                            locationMarker = L.marker([lat, lng], {icon: L.divIcon({html: '<div style="background:#3b82f6;width:20px;height:20px;border-radius:50%;border:3px solid white;"></div>', className: '', iconSize: [20,20], iconAnchor: [10,10]})}).addTo(map).bindPopup('Tu ubicación');
-                        } else locationMarker.setLatLng([lat, lng]);
+                            locationMarker = L.marker([lat, lng], {
+                                icon: L.divIcon({
+                                    html: '<div style="background:#3b82f6;width:20px;height:20px;border-radius:50%;border:3px solid white;"></div>',
+                                    className: '',
+                                    iconSize: [20,20],
+                                    iconAnchor: [10,10]
+                                })
+                            }).addTo(map).bindPopup('Tu ubicación actual');
+                        } else {
+                            locationMarker.setLatLng([lat, lng]);
+                        }
+
                         if (!locationAccuracyCircle) {
-                            locationAccuracyCircle = L.circle([lat, lng], {radius: acc, color: '#3b82f6', fillColor: '#93c5fd', fillOpacity: 0.2}).addTo(map);
-                        } else { locationAccuracyCircle.setLatLng([lat, lng]); locationAccuracyCircle.setRadius(acc); }
-                        if (!firstLocationReceived) { map.setView([lat, lng], 16); firstLocationReceived = true; }
+                            locationAccuracyCircle = L.circle([lat, lng], {
+                                radius: accuracy,
+                                color: '#3b82f6',
+                                fillColor: '#93c5fd',
+                                fillOpacity: 0.2
+                            }).addTo(map);
+                        } else {
+                            locationAccuracyCircle.setLatLng([lat, lng]);
+                            locationAccuracyCircle.setRadius(accuracy);
+                        }
+
+                        if (!firstLocationReceived) {
+                            map.setView([lat, lng], 16);
+                            firstLocationReceived = true;
+                        }
                     },
-                    err => { alert('Error ubicación: ' + err.message); isLocationActive = false; ubicacionControl.updateActiveState(); },
+                    function(error) {
+                        alert('Error al obtener ubicación: ' + error.message);
+                        isLocationActive = false;
+                        ubicacionControl.updateActiveState();
+                    },
                     { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
                 );
             } else {
                 if (locationWatcher) navigator.geolocation.clearWatch(locationWatcher);
                 if (locationMarker) map.removeLayer(locationMarker);
                 if (locationAccuracyCircle) map.removeLayer(locationAccuracyCircle);
-                locationMarker = null; locationAccuracyCircle = null;
+                locationMarker = null;
+                locationAccuracyCircle = null;
             }
         }
 
+        let tamanoPaquete = 20;
+        var grupos = {};
+
         function prepararAgrupamiento() {
             const todosMarkers = getAllVisibleMarkers();
-            if (todosMarkers.length < 5) { alert("Mínimo 5 puntos para agrupar."); return; }
-            const input = prompt(`¿Cuántos puntos por grupo? (5 - ${Math.floor(todosMarkers.length / 2)})\nDefault: 20`, "20");
+            if (todosMarkers.length < 5) {
+                alert("No hay suficientes puntos para agrupar (mínimo 5).");
+                return;
+            }
+
+            const input = prompt(
+                `¿Cuántos puntos por grupo deseas? (mínimo 5, máximo ${Math.floor(todosMarkers.length / 2)})\nValor por defecto: 20`,
+                "20"
+            );
+
             if (input === null) return;
-            const num = parseInt(input) || 20;
-            if (num < 5 || num > todosMarkers.length / 2) { alert("Valor inválido."); return; }
+
+            const num = parseInt(input);
+            if (isNaN(num) || num < 5 || num > todosMarkers.length) {
+                alert("Número inválido. Usa un valor entre 5 y " + Math.floor(todosMarkers.length / 2));
+                return;
+            }
+
             tamanoPaquete = num;
             agruparPuntosReal();
         }
 
-        let tamanoPaquete = 20;
-
         function agruparPuntosReal() {
             const todosMarkers = getAllVisibleMarkers();
+
             const numGrupos = Math.ceil(todosMarkers.length / tamanoPaquete);
-            const features = todosMarkers.map(m => turf.point([parseFloat(m.properties.LONGITUD), parseFloat(m.properties.LATITUD)], m.properties));
+
+            const features = todosMarkers.map(m => {
+                return turf.point([parseFloat(m.properties.LONGITUD), parseFloat(m.properties.LATITUD)], m.properties);
+            });
+
             const geojson = turf.featureCollection(features);
+
             const clustered = turf.clustersKmeans(geojson, { numberOfClusters: numGrupos });
+
             grupos = {};
+
             clustered.features.forEach((feat, idx) => {
                 const grupoId = feat.properties.cluster;
                 if (!grupos[grupoId]) grupos[grupoId] = [];
                 grupos[grupoId].push(todosMarkers[idx]);
+
                 todosMarkers[idx].properties.grupo = grupoId;
                 todosMarkers[idx].properties.colorGrupo = coloresGrupos[grupoId % coloresGrupos.length];
             });
+
             aplicarFiltros();
+
             mostrarSelectorGrupos(numGrupos);
-            alert(`Creados ${numGrupos} grupos de ~${tamanoPaquete} puntos.`);
+
+            alert(`Se crearon ${numGrupos} grupos de aproximadamente ${tamanoPaquete} puntos cada uno.\nUsa el selector para ver uno específico.`);
         }
 
         function mostrarSelectorGrupos(numGrupos) {
@@ -931,69 +1021,122 @@
             modal.id = 'grupoModal';
             modal.className = 'modal';
             modal.style.display = 'flex';
-            let opciones = '<option value="todos">Todos los Grupos</option>';
+
+            let opciones = '<option value="todos">Mostrar Todos los Grupos</option>';
             for (let i = 0; i < numGrupos; i++) {
-                const cant = grupos[i] ? grupos[i].length : '?';
-                opciones += `<option value="${i}">Grupo ${i+1} (${cant} puntos)</option>`;
+                const cantidad = grupos[i] ? grupos[i].length : '?';
+                opciones += `<option value="${i}">Grupo ${i+1} (${cantidad} puntos)</option>`;
             }
+
             modal.innerHTML = `
                 <div class="modal-content" style="width:340px;">
                     <span class="close" onclick="this.closest('.modal').remove()">×</span>
-                    <h4>Seleccionar Grupo (~${tamanoPaquete} por grupo)</h4>
-                    <select id="grupoSelect" onchange="mostrarGrupoSeleccionado()" style="width:100%; padding:8px; margin-bottom:15px;">${opciones}</select>
-                    <button onclick="exportarGruposExcel()" style="width:100%; background:#f59e0b; color:white;">Exportar Todos los Grupos a Excel</button>
-                </div>`;
+                    <h4>Seleccionar Grupo (${tamanoPaquete} aprox. por grupo)</h4>
+                    <select id="grupoSelect" onchange="mostrarGrupoSeleccionado()" style="width:100%; padding:8px; margin-bottom:15px;">
+                        ${opciones}
+                    </select>
+                    <button onclick="exportarGruposExcel()" style="width:100%; background:#f59e0b; color:white;">
+                        Exportar Todos los Grupos a Excel
+                    </button>
+                </div>
+            `;
+
             document.body.appendChild(modal);
         }
 
         function mostrarGrupoSeleccionado() {
-            const valor = document.getElementById('grupoSelect').value;
+            const select = document.getElementById('grupoSelect');
+            if (!select) return;
+
+            const valor = select.value;
+
             loadedFiles.forEach(file => {
                 file.markers.forEach(m => {
-                    m.setStyle({ fillOpacity: (valor === 'todos' || m.properties.grupo == valor) ? 0.85 : 0.15 });
+                    if (valor === 'todos' || m.properties.grupo == valor) {
+                        m.setStyle({ fillOpacity: 0.85 });
+                    } else {
+                        m.setStyle({ fillOpacity: 0.15 });
+                    }
                 });
             });
-            map.eachLayer(l => { if (l instanceof L.MarkerClusterGroup) l.refreshClusters(); });
+
+            map.eachLayer(layer => {
+                if (layer instanceof L.MarkerClusterGroup) {
+                    layer.refreshClusters();
+                }
+            });
         }
 
         function exportarGruposExcel() {
-            if (Object.keys(grupos).length === 0) { alert("Primero agrupa los puntos."); return; }
-            Object.keys(grupos).forEach(g => {
-                const data = grupos[g].map(m => m.properties);
+            if (Object.keys(grupos).length === 0) {
+                alert("Primero debes agrupar los puntos.");
+                return;
+            }
+
+            Object.keys(grupos).forEach(grupoId => {
+                const puntosGrupo = grupos[grupoId];
+                const data = puntosGrupo.map(m => m.properties);
+
                 const ws = XLSX.utils.json_to_sheet(data);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, `Grupo ${parseInt(g)+1}`);
-                XLSX.writeFile(wb, `grupo_${parseInt(g)+1}_${data.length}_puntos.xlsx`);
+                XLSX.utils.book_append_sheet(wb, ws, `Grupo ${parseInt(grupoId) + 1}`);
+                XLSX.writeFile(wb, `grupo_${parseInt(grupoId) + 1}_${data.length}_puntos.xlsx`);
             });
-            alert("Grupos exportados como archivos Excel separados.");
+
+            alert("Todos los grupos han sido exportados como archivos Excel separados.");
         }
 
-        // Carga de data.json como lookup interno
+        // Carga opcional de data.json
         function cargarDataJsonLocal() {
+            if (!useJsonLookup) {
+                console.log("data.json desactivado por el usuario.");
+                return;
+            }
+
             var xhr = new XMLHttpRequest();
             xhr.open("GET", "data.json", true);
             xhr.responseType = "json";
+
             xhr.onload = function () {
-                if (xhr.status === 200 && xhr.response && xhr.response.length > 0) {
-                    console.log("data.json cargado:", xhr.response.length, "registros");
-                    xhr.response.forEach(row => {
-                        const key = row.SUMINISTRO || row.ID || row.suministro || row.id;
-                        if (key) internalDataLookup[key.toString().trim()] = row;
-                    });
-                    alert(`¡data.json cargado como base interna! (${xhr.response.length} registros disponibles para lookup por SUMINISTRO)`);
-                    // Opcional: cargar también como puntos visibles
-                    // procesarDatos("data.json (base interna)", xhr.response);
+                if (xhr.status === 200) {
+                    console.log("data.json cargado correctamente. Registros:", xhr.response.length);
+                    var json = xhr.response;
+                    if (json && json.length > 0) {
+                        json.forEach(row => {
+                            const key = row.SUMINISTRO || row.ID || row.suministro || row.id;
+                            if (key) internalDataLookup[key.toString().trim()] = row;
+                        });
+                        alert(`¡data.json cargado como base interna! (${json.length} registros para lookup por SUMINISTRO)`);
+                    } else {
+                        alert("data.json está vacío o no tiene registros válidos.");
+                    }
                 } else {
-                    alert("No se pudo cargar data.json o está vacío.\nAsegúrate de que esté en la misma carpeta y se llame exactamente 'data.json'.");
+                    alert("No se pudo cargar data.json.\nVerifica que exista en la misma carpeta y se llame 'data.json'.");
                 }
             };
+
             xhr.onerror = function () {
-                alert("Error al cargar data.json. Prueba con Firefox o servidor local.");
+                alert("Error al cargar data.json. Prueba abrir con Firefox o servidor local.");
             };
+
             xhr.send();
         }
 
-        window.addEventListener('load', cargarDataJsonLocal);
+        // Ejecutar al iniciar
+        window.addEventListener('load', function() {
+            cargarDataJsonLocal();
+        });
+
+        // Listener del checkbox
+        document.getElementById('useJsonLookup').addEventListener('change', function() {
+            useJsonLookup = this.checked;
+            if (useJsonLookup) {
+                cargarDataJsonLocal();
+            } else {
+                internalDataLookup = {};
+                alert("data.json desactivado. No se usarán coordenadas internas para SUMINISTRO.");
+            }
+        });
 
         map.on('zoomend', controlarVistaPorZoom);
         document.getElementById('distritoFilter').addEventListener('change', aplicarFiltros);
