@@ -121,6 +121,19 @@
             box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
         }
 
+        label.checkbox-label {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            font-weight: 600;
+            color: #1d4ed8;
+            cursor: pointer;
+        }
+
+        label.checkbox-label input {
+            margin-right: 10px;
+        }
+
         #leyenda {
             position: absolute;
             bottom: 20px;
@@ -229,7 +242,17 @@
                     <span class="leaflet-sidebar-close"><i class="fa fa-caret-left"></i></span>
                 </h1>
                 
-                <input type="file" id="excelFile" accept=".xlsx" multiple />
+                <input type="file" id="excelFile" accept=".xlsx,.csv" multiple />
+                
+                <label class="checkbox-label">
+                    <input type="checkbox" id="useJsonLookup" checked>
+                    Usar data.json para ubicar SUMINISTRO sin coordenadas
+                </label>
+                
+                <label class="checkbox-label">
+                    <input type="checkbox" id="showJsonPoints" checked>
+                    Mostrar puntos de data.json en el mapa
+                </label>
                 
                 <select id="distritoFilter">
                     <option value="">Selecciona distrito</option>
@@ -355,7 +378,10 @@
         var loadedFiles = [];
         var selectedMarkers = [];
         var modoClic = false;
-        var reporteData = [];
+        var internalDataLookup = {};
+        var useJsonLookup = true;
+        var showJsonPoints = true;
+        var jsonFileEntry = null; // Referencia al layer de data.json si se muestra
 
         var locationWatcher = null;
         var locationMarker = null;
@@ -457,18 +483,32 @@
             Array.from(files).forEach(file => {
                 var reader = new FileReader();
                 reader.onload = function(e) {
-                    var data = new Uint8Array(e.target.result);
-                    var workbook = XLSX.read(data, {type: 'array'});
-                    var sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    var json = XLSX.utils.sheet_to_json(sheet);
-                    procesarDatos(file.name, json);
+                    var data = e.target.result;
+                    var extension = file.name.split('.').pop().toLowerCase();
+                    var json;
+                    if (extension === 'xlsx') {
+                        var workbook = XLSX.read(new Uint8Array(data), {type: 'array'});
+                        var sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        json = XLSX.utils.sheet_to_json(sheet);
+                    } else if (extension === 'csv') {
+                        var workbook = XLSX.read(data, {type: 'string'});
+                        json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                    } else {
+                        alert('Formato no soportado: ' + extension);
+                        return;
+                    }
+                    procesarDatos(file.name, json, false); // false = no es json interno
                 };
-                reader.readAsArrayBuffer(file);
+                if (extension === 'csv') {
+                    reader.readAsText(file);
+                } else {
+                    reader.readAsArrayBuffer(file);
+                }
             });
             e.target.value = '';
         });
 
-        function procesarDatos(filename, data) {
+        function procesarDatos(filename, data, esJsonInterno = false) {
             const fileEntry = {
                 filename,
                 data,
@@ -482,8 +522,39 @@
                 visible: true
             };
 
+            let pointsProcessed = 0;
+            let pointsMissingCoords = 0;
+
             data.forEach(row => {
-                if (!row.LATITUD || !row.LONGITUD) return;
+                let lat = row.LATITUD || row.latitud || row.Latitud || row.LAT || row.lat;
+                let lng = row.LONGITUD || row.longitud || row.Longitud || row.LON || row.lon;
+
+                if (!lat || !lng) {
+                    if (!useJsonLookup || esJsonInterno) return;
+
+                    let suministroKey = null;
+                    const posibles = ['SUMINISTRO', 'suministro', 'Suministro', 'CODIGO', 'codigo', 'ID', 'id', 'NSS', 'nss'];
+                    for (const nombre of posibles) {
+                        if (row[nombre] !== undefined && row[nombre] !== null && row[nombre] !== '') {
+                            suministroKey = row[nombre].toString().trim();
+                            break;
+                        }
+                    }
+
+                    if (!suministroKey) return;
+
+                    if (internalDataLookup[suministroKey]) {
+                        const internalRow = internalDataLookup[suministroKey];
+                        lat = internalRow.LATITUD || internalRow.latitud || internalRow.Latitud;
+                        lng = internalRow.LONGITUD || internalRow.longitud || internalRow.Longitud;
+                        row = { ...internalRow, ...row };
+                        pointsMissingCoords++;
+                    } else {
+                        return;
+                    }
+                }
+
+                if (!lat || !lng) return;
 
                 const actividadRaw = (row.ACTIVIDAD || '').toString().trim().toUpperCase();
                 let tipo = 'PROYECTO';
@@ -493,7 +564,7 @@
                 else if (actividadRaw === 'IMPOSIBILIDAD') tipo = 'IMPOSIBILIDAD';
 
                 const color = getColor(tipo);
-                var marker = crearMarcador(row.LATITUD, row.LONGITUD, color);
+                var marker = crearMarcador(lat, lng, color);
                 
                 marker.properties = { ...row, tipoFiltro: tipo, color: color, filename: filename };
 
@@ -508,13 +579,13 @@
                 const popupContent = `
                     <div style="min-width:220px; font-size:13px;">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-                            <strong>ID:</strong> ${row.ID || 'N/D'}
-                            <span id="toggle-${row.ID || 'sinid'}" 
+                            <strong>ID / Suministro:</strong> ${row.ID || row.SUMINISTRO || 'N/D'}
+                            <span id="toggle-${row.ID || row.SUMINISTRO || 'sinid'}" 
                                   style="cursor:pointer; color:#3b82f6; font-size:16px; user-select:none;"
                                   onclick="toggleDetails(this)"> ▶</span>
                         </div>
                         
-                        <div id="details-${row.ID || 'sinid'}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #eee;">
+                        <div id="details-${row.ID || row.SUMINISTRO || 'sinid'}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #eee;">
                             ${datosOcultos.map(item => `
                                 <div style="margin:4px 0;">
                                     <strong>${item.label}:</strong> ${item.value}
@@ -534,12 +605,23 @@
                 fileEntry.markers.push(marker);
                 fileEntry.clusterGroup.addLayer(marker);
                 fileEntry.individualLayer.addLayer(marker);
+                pointsProcessed++;
             });
+
+            if (esJsonInterno) {
+                jsonFileEntry = fileEntry;
+                if (!showJsonPoints) {
+                    fileEntry.visible = false;
+                }
+            }
 
             loadedFiles.push(fileEntry);
             actualizarDistritos();
             aplicarFiltros();
-            alert(`¡Listo! Cargados ${fileEntry.markers.length} puntos del archivo ${filename}.`);
+            const msg = esJsonInterno 
+                ? `data.json cargado (${pointsProcessed} puntos). Visible: ${showJsonPoints ? 'Sí' : 'No'}`
+                : `¡Listo! Cargados ${pointsProcessed} puntos del archivo ${filename}. ( ${pointsMissingCoords} usaron data.json )`;
+            alert(msg);
         }
 
         function toggleDetails(element) {
@@ -650,8 +732,8 @@
 
         function toggleSeleccionMarker(marker) {
             const props = marker.properties;
-            const key = props.ID ? props.ID : `${props.LATITUD}_${props.LONGITUD}`;
-            const index = selectedMarkers.findIndex(s => (s.ID ? s.ID : `${s.LATITUD}_${s.LONGITUD}`) === key);
+            const key = props.ID || props.SUMINISTRO || `${props.LATITUD}_${props.LONGITUD}`;
+            const index = selectedMarkers.findIndex(s => (s.ID || s.SUMINISTRO || `${s.LATITUD}_${s.LONGITUD}`) === key);
             if (index === -1) {
                 selectedMarkers.push(props);
                 marker.setStyle({fillColor: '#00ff00', radius: 9});
@@ -773,10 +855,10 @@
             doc.setFontSize(12);
             doc.text(`Total: ${selectedMarkers.length} puntos | Fecha: ${new Date().toLocaleDateString('es-PE')}`, 14, 30);
 
-            const headers = [["N°", "ID", "Tipo", "Medidor", "Dirección", "Distrito", "Lat", "Lon"]];
+            const headers = [["N°", "ID/Suministro", "Tipo", "Medidor", "Dirección", "Distrito", "Lat", "Lon"]];
             const data = selectedMarkers.map((p, i) => [
                 i + 1,
-                p.ID || 'N/D',
+                p.ID || p.SUMINISTRO || 'N/D',
                 p.tipoFiltro || '—',
                 p.MEDIDOR || 'SIN',
                 p.DIRECCION || '',
@@ -803,7 +885,7 @@
             }
 
             const data = selectedMarkers.map(p => ({
-                ID: p.ID || 'N/D',
+                ID_Suministro: p.ID || p.SUMINISTRO || 'N/D',
                 Tipo: p.tipoFiltro || '—',
                 Medidor: p.MEDIDOR || 'SIN MEDIDOR',
                 Direccion: p.DIRECCION || '',
@@ -895,7 +977,6 @@
         }
 
         let tamanoPaquete = 20;
-        var grupos = {};
 
         function prepararAgrupamiento() {
             const todosMarkers = getAllVisibleMarkers();
@@ -1023,109 +1104,81 @@
         }
 
         // ────────────────────────────────────────────────
-        // CARGA OBLIGATORIA DE data.json DESDE CARPETA LOCAL
+        // CARGA OPCIONAL DE data.json
         // ────────────────────────────────────────────────
 
-        function cargarDataJsonLocal() {
+        function cargarDataJson() {
+            if (!useJsonLookup) {
+                console.log("data.json desactivado (lookup no activado)");
+                return;
+            }
+
             var xhr = new XMLHttpRequest();
             xhr.open("GET", "data.json", true);
             xhr.responseType = "json";
 
             xhr.onload = function () {
                 if (xhr.status === 200) {
-                    console.log("data.json cargado correctamente. Registros:", xhr.response.length);
+                    console.log("data.json cargado. Registros:", xhr.response.length);
                     var json = xhr.response;
                     if (json && json.length > 0) {
-                        const fileEntry = {
-                            filename: "data.json (carga local obligatoria)",
-                            data: json,
-                            markers: [],
-                            clusterGroup: L.markerClusterGroup({
-                                chunkedLoading: true,
-                                disableClusteringAtZoom: 16,
-                                maxClusterRadius: 50
-                            }),
-                            individualLayer: L.layerGroup(),
-                            visible: true
-                        };
-
+                        // Llenar lookup
                         json.forEach(row => {
-                            if (!row.LATITUD || !row.LONGITUD) return;
-
-                            const actividadRaw = (row.ACTIVIDAD || '').toString().trim().toUpperCase();
-                            let tipo = 'PROYECTO';
-                            if (actividadRaw === 'A1') tipo = 'A1';
-                            else if (actividadRaw === 'A2') tipo = 'A2';
-                            else if (actividadRaw === 'A3') tipo = 'A3';
-                            else if (actividadRaw === 'IMPOSIBILIDAD') tipo = 'IMPOSIBILIDAD';
-
-                            const color = getColor(tipo);
-                            var marker = crearMarcador(row.LATITUD, row.LONGITUD, color);
-                            
-                            marker.properties = { ...row, tipoFiltro: tipo, color: color, filename: "data.json" };
-
-                            const popupContent = `
-                                <div style="min-width:220px; font-size:13px;">
-                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-                                        <strong>ID:</strong> ${row.ID || row.SUMINISTRO || 'N/D'}
-                                        <span id="toggle-${row.ID || row.SUMINISTRO || 'sinid'}" 
-                                              style="cursor:pointer; color:#3b82f6; font-size:16px; user-select:none;"
-                                              onclick="toggleDetails(this)"> ▶</span>
-                                    </div>
-                                    
-                                    <div id="details-${row.ID || row.SUMINISTRO || 'sinid'}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #eee;">
-                                        <strong>Actividad:</strong> ${row.ACTIVIDAD || '—'}<br>
-                                        <strong>Distrito:</strong> ${row.DISTRITO || '—'}<br>
-                                        <strong>Medidor:</strong> ${row.MEDIDOR || 'SIN MEDIDOR'}<br>
-                                        <strong>Dirección:</strong> ${row.DIRECCION || '—'}
-                                    </div>
-                                </div>
-                            `;
-
-                            marker.bindPopup(popupContent);
-
-                            marker.on('click', function(e) {
-                                if (modoClic) toggleSeleccionMarker(this);
-                                else map.openPopup(this.getPopup());
-                            });
-
-                            fileEntry.markers.push(marker);
-                            fileEntry.clusterGroup.addLayer(marker);
-                            fileEntry.individualLayer.addLayer(marker);
+                            const key = row.SUMINISTRO || row.ID || row.suministro || row.id;
+                            if (key) internalDataLookup[key.toString().trim()] = row;
                         });
 
-                        loadedFiles.push(fileEntry);
-                        actualizarDistritos();
-                        aplicarFiltros();
-                        console.log(`Puntos de data.json añadidos: ${fileEntry.markers.length} marcadores`);
-                        alert(`¡Cargados ${fileEntry.markers.length} puntos desde data.json (local)!`);
+                        // Mostrar puntos solo si el checkbox está activado
+                        if (showJsonPoints) {
+                            procesarDatos("data.json", json, true);
+                        } else {
+                            alert(`data.json cargado como base interna (${json.length} registros para lookup). Puntos NO mostrados en mapa.`);
+                        }
                     } else {
-                        console.warn("data.json está vacío o no tiene registros válidos.");
-                        alert("data.json está vacío o no tiene datos válidos.");
+                        alert("data.json está vacío o no tiene registros válidos.");
                     }
                 } else {
-                    console.error("No se encontró o no se pudo leer data.json. Código:", xhr.status);
-                    alert("No se pudo cargar data.json.\nVerifica:\n1. Que se llame exactamente 'data.json'\n2. Que esté en la misma carpeta que este HTML\n3. Prueba abrir en Firefox (más permisivo que Chrome)");
+                    alert("No se encontró data.json o hubo error al cargarlo.");
                 }
             };
 
             xhr.onerror = function () {
-                console.error("Error de red o archivo no accesible:", xhr.statusText);
-                alert("Error al intentar leer data.json.\nAsegúrate de que el archivo exista y prueba con Firefox o un servidor local simple.");
+                alert("Error al intentar leer data.json. Verifica que exista en la misma carpeta.");
             };
 
             xhr.send();
         }
 
-        // Ejecutar la carga al iniciar la página
+        // Listeners de checkboxes
+        document.getElementById('useJsonLookup').addEventListener('change', function() {
+            useJsonLookup = this.checked;
+            if (useJsonLookup) {
+                cargarDataJson();
+            } else {
+                internalDataLookup = {};
+                alert("Lookup de data.json desactivado.");
+            }
+        });
+
+        document.getElementById('showJsonPoints').addEventListener('change', function() {
+            showJsonPoints = this.checked;
+            if (jsonFileEntry) {
+                jsonFileEntry.visible = showJsonPoints;
+                aplicarFiltros();
+                alert(`Puntos de data.json ahora ${showJsonPoints ? 'visibles' : 'ocultos'}.`);
+            } else if (showJsonPoints) {
+                // Si antes no se mostró y ahora sí, recargamos
+                cargarDataJson();
+            }
+        });
+
+        // Carga inicial
         window.addEventListener('load', function() {
-            cargarDataJsonLocal();
+            cargarDataJson();
         });
 
         map.on('zoomend', controlarVistaPorZoom);
         document.getElementById('distritoFilter').addEventListener('change', aplicarFiltros);
-
     </script>
 </body>
 </html>
-
