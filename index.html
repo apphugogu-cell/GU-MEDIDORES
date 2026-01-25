@@ -473,7 +473,6 @@
             e.target.value = '';
         });
 
-        // Función mejorada para procesar Excel: usa LAT/LON directo o busca por SUMINISTRO en data.json
         function procesarDatos(filename, data) {
             const fileEntry = {
                 filename,
@@ -510,7 +509,6 @@
                         lat = parseFloat(encontrado.LATITUD);
                         lng = parseFloat(encontrado.LONGITUD);
                         puntosUsandoJSON++;
-                        // Combinar datos del Excel con los del JSON (prioridad al Excel)
                         row = { ...encontrado, ...row };
                     }
                 }
@@ -575,7 +573,6 @@
             }
         }
 
-        // Carga automática de data.json desde carpeta local
         function cargarDataJsonLocal() {
             var xhr = new XMLHttpRequest();
             xhr.open("GET", "data.json", true);
@@ -583,8 +580,8 @@
 
             xhr.onload = function () {
                 if (xhr.status === 200) {
-                    console.log("data.json cargado correctamente. Registros:", xhr.response.length);
-                    datosJSON = xhr.response; // Guardamos globalmente para búsquedas en Excel
+                    console.log("data.json cargado correctamente desde carpeta local. Registros:", xhr.response.length);
+                    datosJSON = xhr.response;
                     if (datosJSON && datosJSON.length > 0) {
                         const fileEntry = {
                             filename: "data.json (carga local obligatoria)",
@@ -648,26 +645,25 @@
                         loadedFiles.push(fileEntry);
                         actualizarDistritos();
                         aplicarFiltros();
-                        console.log(`Puntos de data.json añadidos: ${fileEntry.markers.length} marcadores`);
+                        alert(`¡Cargados ${fileEntry.markers.length} puntos desde data.json automáticamente!`);
                     } else {
-                        console.warn("data.json está vacío o no tiene registros válidos.");
+                        alert("data.json está vacío o no tiene registros válidos.");
                     }
                 } else {
-                    console.warn("No se encontró data.json o error al leerlo. Código:", xhr.status);
+                    alert("No se encontró data.json en la carpeta.\nVerifica:\n1. Nombre exacto: data.json (minúsculas)\n2. Está en la misma carpeta que este HTML\n3. Prueba abrir en Firefox");
                 }
             };
 
             xhr.onerror = function () {
-                console.error("Error al intentar leer data.json desde carpeta local");
+                alert("Error al intentar leer data.json.\nAsegúrate de que exista y prueba con Firefox.");
             };
 
             xhr.send();
         }
 
-        // Ejecutar carga del JSON al iniciar
-        window.addEventListener('load', function() {
+        window.onload = function() {
             cargarDataJsonLocal();
-        });
+        };
 
         function toggleLocation() {
             isLocationActive = !isLocationActive;
