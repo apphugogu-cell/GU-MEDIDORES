@@ -121,14 +121,6 @@
             box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
         }
 
-        label[for="useJsonLookup"] {
-            display: flex;
-            align-items: center;
-            margin: 15px 0;
-            font-weight: bold;
-            color: #1d4ed8;
-        }
-
         #leyenda {
             position: absolute;
             bottom: 20px;
@@ -237,12 +229,7 @@
                     <span class="leaflet-sidebar-close"><i class="fa fa-caret-left"></i></span>
                 </h1>
                 
-                <input type="file" id="excelFile" accept=".xlsx,.csv" multiple />
-                
-                <label for="useJsonLookup">
-                    <input type="checkbox" id="useJsonLookup" checked>
-                    Usar data.json como base interna (para ubicar SUMINISTRO sin coordenadas)
-                </label>
+                <input type="file" id="excelFile" accept=".xlsx" multiple />
                 
                 <select id="distritoFilter">
                     <option value="">Selecciona distrito</option>
@@ -368,8 +355,7 @@
         var loadedFiles = [];
         var selectedMarkers = [];
         var modoClic = false;
-        var internalDataLookup = {}; // Mapa de SUMINISTRO → datos de data.json
-        var useJsonLookup = true; // Controla si se usa data.json
+        var reporteData = [];
 
         var locationWatcher = null;
         var locationMarker = null;
@@ -471,27 +457,13 @@
             Array.from(files).forEach(file => {
                 var reader = new FileReader();
                 reader.onload = function(e) {
-                    var data = e.target.result;
-                    var extension = file.name.split('.').pop().toLowerCase();
-                    var json;
-                    if (extension === 'xlsx') {
-                        var workbook = XLSX.read(new Uint8Array(data), {type: 'array'});
-                        var sheet = workbook.Sheets[workbook.SheetNames[0]];
-                        json = XLSX.utils.sheet_to_json(sheet);
-                    } else if (extension === 'csv') {
-                        var workbook = XLSX.read(data, {type: 'string'});
-                        json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                    } else {
-                        alert('Formato no soportado: ' + extension);
-                        return;
-                    }
+                    var data = new Uint8Array(e.target.result);
+                    var workbook = XLSX.read(data, {type: 'array'});
+                    var sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    var json = XLSX.utils.sheet_to_json(sheet);
                     procesarDatos(file.name, json);
                 };
-                if (extension === 'csv') {
-                    reader.readAsText(file);
-                } else {
-                    reader.readAsArrayBuffer(file);
-                }
+                reader.readAsArrayBuffer(file);
             });
             e.target.value = '';
         });
@@ -510,43 +482,8 @@
                 visible: true
             };
 
-            let pointsProcessed = 0;
-            let pointsMissingCoords = 0;
-
             data.forEach(row => {
-                let lat = row.LATITUD || row.latitud || row.Latitud || row.LAT || row.lat;
-                let lng = row.LONGITUD || row.longitud || row.Longitud || row.LON || row.lon;
-
-                if (!lat || !lng) {
-                    if (!useJsonLookup) return;
-
-                    let suministroKey = null;
-                    const posibles = ['SUMINISTRO', 'suministro', 'Suministro', 'CODIGO', 'codigo', 'ID', 'id', 'NSS', 'nss'];
-                    for (const nombre of posibles) {
-                        if (row[nombre] !== undefined && row[nombre] !== null && row[nombre] !== '') {
-                            suministroKey = row[nombre].toString().trim();
-                            break;
-                        }
-                    }
-
-                    if (!suministroKey) {
-                        console.warn('No se encontró columna SUMINISTRO ni coordenadas en fila:', row);
-                        return;
-                    }
-
-                    if (internalDataLookup[suministroKey]) {
-                        const internalRow = internalDataLookup[suministroKey];
-                        lat = internalRow.LATITUD || internalRow.latitud || internalRow.Latitud;
-                        lng = internalRow.LONGITUD || internalRow.longitud || internalRow.Longitud;
-                        row = { ...internalRow, ...row };
-                        pointsMissingCoords++;
-                    } else {
-                        console.warn('SUMINISTRO no encontrado en data.json:', suministroKey);
-                        return;
-                    }
-                }
-
-                if (!lat || !lng) return;
+                if (!row.LATITUD || !row.LONGITUD) return;
 
                 const actividadRaw = (row.ACTIVIDAD || '').toString().trim().toUpperCase();
                 let tipo = 'PROYECTO';
@@ -556,7 +493,7 @@
                 else if (actividadRaw === 'IMPOSIBILIDAD') tipo = 'IMPOSIBILIDAD';
 
                 const color = getColor(tipo);
-                var marker = crearMarcador(lat, lng, color);
+                var marker = crearMarcador(row.LATITUD, row.LONGITUD, color);
                 
                 marker.properties = { ...row, tipoFiltro: tipo, color: color, filename: filename };
 
@@ -571,13 +508,13 @@
                 const popupContent = `
                     <div style="min-width:220px; font-size:13px;">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-                            <strong>ID / Suministro:</strong> ${row.ID || row.SUMINISTRO || 'N/D'}
-                            <span id="toggle-${row.ID || row.SUMINISTRO || 'sinid'}" 
+                            <strong>ID:</strong> ${row.ID || 'N/D'}
+                            <span id="toggle-${row.ID || 'sinid'}" 
                                   style="cursor:pointer; color:#3b82f6; font-size:16px; user-select:none;"
                                   onclick="toggleDetails(this)"> ▶</span>
                         </div>
                         
-                        <div id="details-${row.ID || row.SUMINISTRO || 'sinid'}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #eee;">
+                        <div id="details-${row.ID || 'sinid'}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #eee;">
                             ${datosOcultos.map(item => `
                                 <div style="margin:4px 0;">
                                     <strong>${item.label}:</strong> ${item.value}
@@ -597,13 +534,12 @@
                 fileEntry.markers.push(marker);
                 fileEntry.clusterGroup.addLayer(marker);
                 fileEntry.individualLayer.addLayer(marker);
-                pointsProcessed++;
             });
 
             loadedFiles.push(fileEntry);
             actualizarDistritos();
             aplicarFiltros();
-            alert(`¡Listo! Cargados ${pointsProcessed} puntos del archivo ${filename}.\nDe ellos, ${pointsMissingCoords} usaron coordenadas de data.json vía SUMINISTRO.`);
+            alert(`¡Listo! Cargados ${fileEntry.markers.length} puntos del archivo ${filename}.`);
         }
 
         function toggleDetails(element) {
@@ -714,8 +650,8 @@
 
         function toggleSeleccionMarker(marker) {
             const props = marker.properties;
-            const key = props.ID || props.SUMINISTRO || `${props.LATITUD}_${props.LONGITUD}`;
-            const index = selectedMarkers.findIndex(s => (s.ID || s.SUMINISTRO || `${s.LATITUD}_${s.LONGITUD}`) === key);
+            const key = props.ID ? props.ID : `${props.LATITUD}_${props.LONGITUD}`;
+            const index = selectedMarkers.findIndex(s => (s.ID ? s.ID : `${s.LATITUD}_${s.LONGITUD}`) === key);
             if (index === -1) {
                 selectedMarkers.push(props);
                 marker.setStyle({fillColor: '#00ff00', radius: 9});
@@ -837,10 +773,10 @@
             doc.setFontSize(12);
             doc.text(`Total: ${selectedMarkers.length} puntos | Fecha: ${new Date().toLocaleDateString('es-PE')}`, 14, 30);
 
-            const headers = [["N°", "ID/Suministro", "Tipo", "Medidor", "Dirección", "Distrito", "Lat", "Lon"]];
+            const headers = [["N°", "ID", "Tipo", "Medidor", "Dirección", "Distrito", "Lat", "Lon"]];
             const data = selectedMarkers.map((p, i) => [
                 i + 1,
-                p.ID || p.SUMINISTRO || 'N/D',
+                p.ID || 'N/D',
                 p.tipoFiltro || '—',
                 p.MEDIDOR || 'SIN',
                 p.DIRECCION || '',
@@ -867,7 +803,7 @@
             }
 
             const data = selectedMarkers.map(p => ({
-                ID_Suministro: p.ID || p.SUMINISTRO || 'N/D',
+                ID: p.ID || 'N/D',
                 Tipo: p.tipoFiltro || '—',
                 Medidor: p.MEDIDOR || 'SIN MEDIDOR',
                 Direccion: p.DIRECCION || '',
@@ -1086,13 +1022,11 @@
             alert("Todos los grupos han sido exportados como archivos Excel separados.");
         }
 
-        // Carga opcional de data.json
-        function cargarDataJsonLocal() {
-            if (!useJsonLookup) {
-                console.log("data.json desactivado por el usuario.");
-                return;
-            }
+        // ────────────────────────────────────────────────
+        // CARGA OBLIGATORIA DE data.json DESDE CARPETA LOCAL
+        // ────────────────────────────────────────────────
 
+        function cargarDataJsonLocal() {
             var xhr = new XMLHttpRequest();
             xhr.open("GET", "data.json", true);
             xhr.responseType = "json";
@@ -1102,44 +1036,96 @@
                     console.log("data.json cargado correctamente. Registros:", xhr.response.length);
                     var json = xhr.response;
                     if (json && json.length > 0) {
+                        const fileEntry = {
+                            filename: "data.json (carga local obligatoria)",
+                            data: json,
+                            markers: [],
+                            clusterGroup: L.markerClusterGroup({
+                                chunkedLoading: true,
+                                disableClusteringAtZoom: 16,
+                                maxClusterRadius: 50
+                            }),
+                            individualLayer: L.layerGroup(),
+                            visible: true
+                        };
+
                         json.forEach(row => {
-                            const key = row.SUMINISTRO || row.ID || row.suministro || row.id;
-                            if (key) internalDataLookup[key.toString().trim()] = row;
+                            if (!row.LATITUD || !row.LONGITUD) return;
+
+                            const actividadRaw = (row.ACTIVIDAD || '').toString().trim().toUpperCase();
+                            let tipo = 'PROYECTO';
+                            if (actividadRaw === 'A1') tipo = 'A1';
+                            else if (actividadRaw === 'A2') tipo = 'A2';
+                            else if (actividadRaw === 'A3') tipo = 'A3';
+                            else if (actividadRaw === 'IMPOSIBILIDAD') tipo = 'IMPOSIBILIDAD';
+
+                            const color = getColor(tipo);
+                            var marker = crearMarcador(row.LATITUD, row.LONGITUD, color);
+                            
+                            marker.properties = { ...row, tipoFiltro: tipo, color: color, filename: "data.json" };
+
+                            const popupContent = `
+                                <div style="min-width:220px; font-size:13px;">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                                        <strong>ID:</strong> ${row.ID || row.SUMINISTRO || 'N/D'}
+                                        <span id="toggle-${row.ID || row.SUMINISTRO || 'sinid'}" 
+                                              style="cursor:pointer; color:#3b82f6; font-size:16px; user-select:none;"
+                                              onclick="toggleDetails(this)"> ▶</span>
+                                    </div>
+                                    
+                                    <div id="details-${row.ID || row.SUMINISTRO || 'sinid'}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #eee;">
+                                        <strong>Actividad:</strong> ${row.ACTIVIDAD || '—'}<br>
+                                        <strong>Distrito:</strong> ${row.DISTRITO || '—'}<br>
+                                        <strong>Medidor:</strong> ${row.MEDIDOR || 'SIN MEDIDOR'}<br>
+                                        <strong>Dirección:</strong> ${row.DIRECCION || '—'}
+                                    </div>
+                                </div>
+                            `;
+
+                            marker.bindPopup(popupContent);
+
+                            marker.on('click', function(e) {
+                                if (modoClic) toggleSeleccionMarker(this);
+                                else map.openPopup(this.getPopup());
+                            });
+
+                            fileEntry.markers.push(marker);
+                            fileEntry.clusterGroup.addLayer(marker);
+                            fileEntry.individualLayer.addLayer(marker);
                         });
-                        alert(`¡data.json cargado como base interna! (${json.length} registros para lookup por SUMINISTRO)`);
+
+                        loadedFiles.push(fileEntry);
+                        actualizarDistritos();
+                        aplicarFiltros();
+                        console.log(`Puntos de data.json añadidos: ${fileEntry.markers.length} marcadores`);
+                        alert(`¡Cargados ${fileEntry.markers.length} puntos desde data.json (local)!`);
                     } else {
-                        alert("data.json está vacío o no tiene registros válidos.");
+                        console.warn("data.json está vacío o no tiene registros válidos.");
+                        alert("data.json está vacío o no tiene datos válidos.");
                     }
                 } else {
-                    alert("No se pudo cargar data.json.\nVerifica que exista en la misma carpeta y se llame 'data.json'.");
+                    console.error("No se encontró o no se pudo leer data.json. Código:", xhr.status);
+                    alert("No se pudo cargar data.json.\nVerifica:\n1. Que se llame exactamente 'data.json'\n2. Que esté en la misma carpeta que este HTML\n3. Prueba abrir en Firefox (más permisivo que Chrome)");
                 }
             };
 
             xhr.onerror = function () {
-                alert("Error al cargar data.json. Prueba abrir con Firefox o servidor local.");
+                console.error("Error de red o archivo no accesible:", xhr.statusText);
+                alert("Error al intentar leer data.json.\nAsegúrate de que el archivo exista y prueba con Firefox o un servidor local simple.");
             };
 
             xhr.send();
         }
 
-        // Ejecutar al iniciar
+        // Ejecutar la carga al iniciar la página
         window.addEventListener('load', function() {
             cargarDataJsonLocal();
         });
 
-        // Listener del checkbox
-        document.getElementById('useJsonLookup').addEventListener('change', function() {
-            useJsonLookup = this.checked;
-            if (useJsonLookup) {
-                cargarDataJsonLocal();
-            } else {
-                internalDataLookup = {};
-                alert("data.json desactivado. No se usarán coordenadas internas para SUMINISTRO.");
-            }
-        });
-
         map.on('zoomend', controlarVistaPorZoom);
         document.getElementById('distritoFilter').addEventListener('change', aplicarFiltros);
+
     </script>
 </body>
 </html>
+
