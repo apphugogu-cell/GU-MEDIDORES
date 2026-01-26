@@ -416,42 +416,6 @@
     <script>
         const { jsPDF } = window.jspdf;
 
-        // ────────────────────────────────────────────────
-        //           MATRIZ EMBEBIDA EN JSON (copia aquí tus datos reales)
-        // ────────────────────────────────────────────────
-        const matrizJSON = [
-            // Pega aquí el array JSON completo de tu archivo 52MILMATRIX.xlsx
-            // Ejemplo de formato:
-            { "SUMINISTRO": "12345678", "LATITUD": -8.12345, "LONGITUD": -79.01234 },
-            { "SUMINISTRO": "87654321", "LATITUD": -8.23456, "LONGITUD": -79.12345 },
-            // ... todos tus registros
-            // Si tienes 52 mil filas, el archivo HTML será grande (~5-15 MB), pero funciona 100% offline y automático
-        ];
-
-        // Convertir inmediatamente a Map para búsquedas rápidas
-        const matrizUbicaciones = new Map(
-            matrizJSON.map(row => [
-                normalizarSuministro(row.SUMINISTRO || row['SUMINISTRO'] || ''),
-                {
-                    lat: parseFloat(row.LATITUD || row.LAT || row.Latitud),
-                    lng: parseFloat(row.LONGITUD || row.LON || row.Longitud)
-                }
-            ]).filter(([_, pos]) => !isNaN(pos.lat) && !isNaN(pos.lng) && pos.lat !== 0 && pos.lng !== 0)
-        );
-
-        // Mensaje de confirmación al cargar la página
-        window.addEventListener('load', () => {
-            if (matrizUbicaciones.size > 0) {
-                alert(`Matriz embebida cargada automáticamente\n${matrizUbicaciones.size} suministros con coordenadas válidas.`);
-            } else {
-                alert("La matriz JSON está vacía o no tiene coordenadas válidas.\nPuedes cargar archivos manualmente con el botón.");
-            }
-        });
-
-        // ────────────────────────────────────────────────
-        //           RESTO DEL CÓDIGO (sin cambios)
-        // ────────────────────────────────────────────────
-
         var map = L.map('map').setView([-7.8, -78.5], 9);
 
         var baseLayers = {
@@ -480,6 +444,8 @@
             closeButton: true,
             autopan: false
         }).addTo(map);
+
+        var matrizUbicaciones = new Map();
 
         let currentHighlightedMarker = null;
         let currentSelectedMarker = null;
@@ -623,6 +589,42 @@
             document.getElementById('excelFile').click();
         });
 
+        // CARGA AUTOMÁTICA DE data.json DESDE TU GITHUB
+        async function cargarMatrizJsonDesdeGitHub() {
+            const urlJson = "https://raw.githubusercontent.com/apphugogu-cell/GU-MEDIDORES/main/data.json";
+
+            try {
+                const response = await fetch(urlJson);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const json = await response.json();
+
+                let cargados = 0;
+                matrizUbicaciones.clear();
+
+                json.forEach(row => {
+                    const suministro = normalizarSuministro(
+                        row.SUMINISTRO || row['SUMINISTRO'] || row['N° SUMINISTRO'] || row['COD SUMINISTRO'] || ''
+                    );
+                    const lat = parseFloat(row.LATITUD || row.LAT || row.Latitud);
+                    const lng = parseFloat(row.LONGITUD || row.LON || row.Longitud);
+
+                    if (suministro && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+                        matrizUbicaciones.set(suministro, { lat, lng });
+                        cargados++;
+                    }
+                });
+
+                alert(`¡Matriz data.json cargada automáticamente!\n${cargados} suministros con coordenadas válidas.`);
+            } catch (err) {
+                console.error(err);
+                alert(`No se pudo cargar data.json.\n\nVerifica:\n1. El archivo está en la raíz del repositorio\n2. Se llama exactamente "data.json"\n3. El repositorio es público\n\nPuedes cargar manualmente con el botón.`);
+                document.getElementById('excelFile').click();
+            }
+        }
+
+        window.addEventListener('load', cargarMatrizJsonDesdeGitHub);
+
         document.getElementById('excelFile').addEventListener('change', function(e) {
             const files = e.target.files;
             if (files.length === 0) return;
@@ -690,17 +692,11 @@
                         const actividadRaw = (row.ACTIVIDAD || '').toString().trim().toUpperCase();
                         let tipo = 'PROYECTO';
                         
-                        if (esVerEnCampo) {
-                            tipo = 'VERENCAMPO';
-                        } else if (actividadRaw === 'A1') {
-                            tipo = 'A1';
-                        } else if (actividadRaw === 'A2') {
-                            tipo = 'A2';
-                        } else if (actividadRaw === 'A3') {
-                            tipo = 'A3';
-                        } else if (actividadRaw === 'IMPOSIBILIDAD') {
-                            tipo = 'IMPOSIBILIDAD';
-                        }
+                        if (esVerEnCampo) tipo = 'VERENCAMPO';
+                        else if (actividadRaw === 'A1') tipo = 'A1';
+                        else if (actividadRaw === 'A2') tipo = 'A2';
+                        else if (actividadRaw === 'A3') tipo = 'A3';
+                        else if (actividadRaw === 'IMPOSIBILIDAD') tipo = 'IMPOSIBILIDAD';
 
                         const color = getColor(tipo);
                         var marker = crearMarcador(lat, lng, color);
@@ -752,40 +748,6 @@
                 opt.value = d; opt.text = d;
                 selectDist.appendChild(opt);
             });
-        }
-
-        function getAllVisibleMarkers() {
-            let markers = [];
-            loadedFiles.forEach(file => {
-                if (file.visible) markers = markers.concat(file.markers);
-            });
-            return markers;
-        }
-
-        function getSelectedVisibleMarkers() {
-            let markers = [];
-            loadedFiles.forEach(file => {
-                if (file.visible && file.selectedForAnalysis) {
-                    markers = markers.concat(file.markers);
-                }
-            });
-            return markers;
-        }
-
-        function actualizarConteos() {
-            const markers = getSelectedVisibleMarkers();
-            const c = { A1:0, A2:0, A3:0, IMPOSIBILIDAD:0, PROYECTO:0, VERENCAMPO:0, total: markers.length };
-            markers.forEach(m => {
-                if (c.hasOwnProperty(m.properties.tipoFiltro)) c[m.properties.tipoFiltro]++;
-            });
-            document.getElementById('modalCountA1').textContent = c.A1;
-            document.getElementById('modalCountA2').textContent = c.A2;
-            document.getElementById('modalCountA3').textContent = c.A3;
-            document.getElementById('modalCountIMP').textContent = c.IMPOSIBILIDAD;
-            document.getElementById('modalCountPROY').textContent = c.PROYECTO;
-            document.getElementById('modalCountVERCAMPO').textContent = c.VERENCAMPO;
-            document.getElementById('modalCountTotal').textContent = c.total;
-            document.getElementById('modalSelectionCount').textContent = selectedMarkers.length;
         }
 
         function actualizarBotonesAnalisis() {
