@@ -38,47 +38,53 @@
         .leaflet-sidebar-header {
             background: #1d4ed8;
             color: white;
-            padding: 8px;
-            font-size: 16px;
+            padding: 1px;
+            font-size: 20px;
             font-weight: 600;
             border-bottom: 1px solid #3b82f6;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
         }
         
         .leaflet-sidebar-content {
-            padding: 12px 8px;
+            padding: 24px 0px;
+        }
+        
+        h4 {
+            color: #1d4ed8;
+            font-size: 22px;
+            margin: 0 0 20px 0;
+            text-align: center;
+            font-weight: 600;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #bfdbfe;
         }
         
         button {
-            width: 100%;
-            height: 18px;                    /* reducido a la mitad */
-            font-size: 11px;                 /* fuente más pequeña */
+            width: 50%;                  /* ← reducido a la mitad del ancho */
+            height: 30px;
+            font-size: 13px;             /* fuente un poco más pequeña para que quepa bien */
             font-weight: 600;
-            margin: 4px 0;                   /* menos espacio entre botones */
-            padding: 0 8px;
-            border-radius: 6px;
+            margin: 10px auto;           /* centrado horizontalmente */
+            padding: 0 12px;
+            border-radius: 8px;
             border: none;
             background: #3b82f6;
             color: white;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            box-shadow: 0 1px 4px rgba(59,130,246,0.25);
-        }
-        
-        button i {
-            font-size: 12px;                 /* iconos más pequeños */
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.25);
         }
         
         button:hover {
             background: #2563eb;
-            transform: translateY(-1px);
-            box-shadow: 0 3px 8px rgba(59,130,246,0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(59,130,246,0.35);
         }
         
         button:disabled {
@@ -106,18 +112,18 @@
 
         select, input[type="text"], input[type="file"] {
             width: 100%;
-            padding: 8px 10px;
-            font-size: 12px;
+            padding: 14px 16px;
+            font-size: 15px;
             border: 1px solid #93c5fd;
-            border-radius: 6px;
-            margin: 6px 0;
+            border-radius: 8px;
+            margin: 10px 0;
             background: white;
         }
         
         select:focus, input:focus {
             border-color: #3b82f6;
             outline: none;
-            box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
         }
 
         #leyenda {
@@ -125,44 +131,55 @@
             bottom: 20px;
             right: 20px;
             background: white;
-            padding: 10px 14px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-            font-size: 12px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            font-size: 13px;
             border: 1px solid #e5e7eb;
             z-index: 1000;
         }
         
-        .leyenda-item { display: flex; align-items: center; margin: 4px 0; }
-        .leyenda-color { width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 1px solid #666; }
+        .leyenda-item { display: flex; align-items: center; margin: 6px 0; }
+        .leyenda-color { width: 16px; height: 16px; border-radius: 50%; margin-right: 10px; border: 1px solid #666; }
         
         .legend-toggle {
             position: absolute;
-            bottom: 90px;
+            bottom: 100px;
             right: 30px;
             z-index: 1001;
             background: white;
             border: 2px solid #4682b4;
             border-radius: 50%;
-            width: 36px;
-            height: 36px;
+            width: 44px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-            font-size: 16px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+            font-size: 18px;
             color: #4682b4;
+            transition: all 0.25s;
         }
         
         .legend-toggle:hover {
             background: #4682b4;
             color: white;
             transform: scale(1.08);
+            box-shadow: 0 5px 15px rgba(70,130,180,0.4);
         }
         
         #leyenda.hidden { display: none !important; }
         
+        .location-control-active { background-color: #a5d8ff !important; }
+        .location-control-active i { animation: pulse 2s infinite; }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.25); }
+            100% { transform: scale(1); }
+        }
+
         .modal { 
             display: none; 
             position: fixed; 
@@ -175,14 +192,15 @@
         }
         .modal-content { 
             background: white; 
-            padding: 16px; 
-            border-radius: 10px; 
-            width: 90%;
-            max-width: 400px;
-            max-height: 85vh;
-            overflow-y: auto;
+            color: #1f2937; 
+            padding: 24px; 
+            border-radius: 12px; 
+            width: 420px; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25); 
         }
-        .close { float: right; font-size: 24px; cursor: pointer; color: #666; }
+        .close { float: right; font-size: 28px; cursor: pointer; color: #666; }
 
         #detallePunto {
             position: absolute;
@@ -219,6 +237,20 @@
             display: inline-block;
             width: 90px;
         }
+
+        @media print {
+            #leyenda, .leaflet-control-container, .leaflet-sidebar, .legend-toggle, #detallePunto { display: none !important; }
+            #map { height: 100vh !important; }
+            body::before { 
+                content: "Mapa de Conexiones de Agua Potable - Región La Libertad"; 
+                display: block; 
+                text-align: center; 
+                font-size: 26px; 
+                font-weight: bold; 
+                color: #1d4ed8; 
+                margin: 30px 0 20px; 
+            }
+        }
     </style>
 </head>
 <body data-print-date="">
@@ -239,43 +271,68 @@
         <div class="leaflet-sidebar-content">
             <div class="leaflet-sidebar-pane active" id="home">
                 <h1 class="leaflet-sidebar-header">
-                    <i class="fa fa-tint"></i> Agua Potable
+                    <i class="fa fa-tint"></i> Conexiones Agua Potable
                     <span class="leaflet-sidebar-close"><i class="fa fa-caret-left"></i></span>
                 </h1>
                 
                 <input type="file" id="excelFile" accept=".xlsx" multiple />
                 
-                <button id="btn-matriz" style="background:#7c3aed; color:white; margin:6px 0;">
+                <button id="btn-matriz" style="background:#7c3aed; color:white; margin:10px auto; display:block;">
                     <i class="fa fa-database"></i> Matriz
                 </button>
                 
                 <select id="distritoFilter">
-                    <option value="">Distrito</option>
+                    <option value="">Selecciona distrito</option>
                 </select>
                 
-                <button onclick="abrirGestionArchivos()"><i class="fa fa-folder"></i> Archivos</button>
+                <button onclick="abrirGestionArchivos()" style="margin:10px auto; display:block;">
+                    <i class="fa fa-folder"></i> Archivos
+                </button>
                 
-                <div style="margin-top:10px;">
-                    <button id="btnConteo" disabled onclick="ejecutarConteo()"><i class="fa fa-chart-pie"></i> Conteo</button>
-                    <button id="btnReporte" disabled onclick="ejecutarReporte()"><i class="fa fa-table"></i> Reporte</button>
-                    <button id="btnFiltro" onclick="abrirFiltroVisibilidad()"><i class="fa fa-filter"></i> Filtro</button>
+                <div style="margin-top:20px; text-align:center;">
+                    <button id="btnConteo" disabled onclick="ejecutarConteo()" style="margin:5px;">
+                        <i class="fa fa-chart-pie"></i> Conteo
+                    </button>
+                    <button id="btnReporte" disabled onclick="ejecutarReporte()" style="margin:5px;">
+                        <i class="fa fa-table"></i> Reporte
+                    </button>
+                    <button id="btnFiltro" onclick="abrirFiltroVisibilidad()" style="margin:5px;">
+                        <i class="fa fa-filter"></i> Filtro
+                    </button>
                 </div>
                 
-                <button id="btnSeleccionar" onclick="toggleModoClic()"><i class="fa fa-hand-pointer"></i> Seleccionar</button>
-                <button onclick="limpiarSeleccion()"><i class="fa fa-eraser"></i> Limpiar</button>
+                <button id="btnSeleccionar" onclick="toggleModoClic()" style="margin:10px auto; display:block;">
+                    <i class="fa fa-hand-pointer"></i> Seleccionar
+                </button>
+                <button onclick="limpiarSeleccion()" style="margin:10px auto; display:block;">
+                    <i class="fa fa-eraser"></i> Limpiar
+                </button>
                 
-                <button onclick="prepararAgrupamiento()"><i class="fa fa-object-group"></i> Agrupar</button>
+                <button onclick="prepararAgrupamiento()" style="margin:10px auto; display:block;">
+                    <i class="fa fa-object-group"></i> Agrupar
+                </button>
                 
-                <button onclick="imprimirMapaNormal()"><i class="fa fa-print"></i> Imprimir</button>
+                <button onclick="imprimirMapaNormal()" style="margin:10px auto; display:block;">
+                    <i class="fa fa-print"></i> Imprimir
+                </button>
                 
-                <hr style="margin:10px 0;">
+                <hr style="border-color:#bfdbfe; margin:20px 0;">
                 
-                <input type="text" id="search-box" placeholder="SUMINISTRO">
+                <input type="text" id="search-box" placeholder="Buscar SUMINISTRO / Dir / Medidor">
                 
-                <div id="export-buttons" style="margin-top:10px;">
-                    <button onclick="exportarSeleccionPDF()"><i class="fa fa-file-pdf"></i> PDF</button>
-                    <button onclick="exportarSeleccionExcel()"><i class="fa fa-file-excel"></i> XLS</button>
+                <hr style="border-color:#bfdbfe; margin:20px 0;">
+                
+                <div id="export-buttons" style="text-align:center;">
+                    <button onclick="exportarSeleccionPDF()" style="margin:5px;">
+                        <i class="fa fa-file-pdf"></i> PDF
+                    </button>
+                    <button onclick="exportarSeleccionExcel()" style="margin:5px;">
+                        <i class="fa fa-file-excel"></i> EXCEL
+                    </button>
                 </div>
+                <small style="color:#64748b; display:block; text-align:center; margin-top:10px; font-size:11px;">
+                    Exporta sin coordenadas
+                </small>
             </div>
         </div>
     </div>
@@ -285,9 +342,9 @@
         <div class="leyenda-item"><div class="leyenda-color" style="background:#d32f2f;"></div>A1</div>
         <div class="leyenda-item"><div class="leyenda-color" style="background:#ffeb3b;"></div>A2</div>
         <div class="leyenda-item"><div class="leyenda-color" style="background:#4caf50;"></div>A3</div>
-        <div class="leyenda-item"><div class="leyenda-color" style="background:#212121;"></div>Imp</div>
-        <div class="leyenda-item"><div class="leyenda-color" style="background:#4682b4;"></div>Proy</div>
-        <div class="leyenda-item"><div class="leyenda-color" style="background:#ff9800;"></div>Campo</div>
+        <div class="leyenda-item"><div class="leyenda-color" style="background:#212121;"></div>Imposibilidad</div>
+        <div class="leyenda-item"><div class="leyenda-color" style="background:#4682b4;"></div>Proyecto Total</div>
+        <div class="leyenda-item"><div class="leyenda-color" style="background:#ff9800;"></div>Ver en Campo</div>
     </div>
 
     <div class="legend-toggle" id="toggleLeyenda" title="Mostrar/Ocultar leyenda">
@@ -297,33 +354,34 @@
     <div id="conteoModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="cerrarModal('conteoModal')">×</span>
-            <h4>Conteo</h4>
+            <h4>Conteo General</h4>
             <div>A1: <span id="modalCountA1">0</span></div>
             <div>A2: <span id="modalCountA2">0</span></div>
             <div>A3: <span id="modalCountA3">0</span></div>
-            <div>Imp: <span id="modalCountIMP">0</span></div>
-            <div>Proy: <span id="modalCountPROY">0</span></div>
-            <div>Campo: <span id="modalCountVERCAMPO">0</span></div>
+            <div>Imposibilidad: <span id="modalCountIMP">0</span></div>
+            <div>Proyecto Total: <span id="modalCountPROY">0</span></div>
+            <div>Ver en Campo: <span id="modalCountVERCAMPO">0</span></div>
             <hr>
-            <div>Total: <span id="modalCountTotal">0</span></div>
+            <div>Total cargados: <span id="modalCountTotal">0</span></div>
+            <div>Selección actual: <span id="modalSelectionCount">0</span> puntos</div>
         </div>
     </div>
 
     <div id="reporteModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="cerrarModal('reporteModal')">×</span>
-            <h4>Reporte</h4>
+            <h4>Reporte por Localidad</h4>
             <div id="reporteContenido"></div>
         </div>
     </div>
 
     <div id="gestionArchivosModal" class="modal">
-        <div class="modal-content" style="width:420px;">
+        <div class="modal-content" style="width:480px;">
             <span class="close" onclick="cerrarModal('gestionArchivosModal')">×</span>
-            <h4>Archivos</h4>
-            <div id="gestionFilesList" style="margin: 10px 0; max-height:300px; overflow-y:auto;"></div>
-            <button onclick="aplicarGestionArchivos()" style="margin-top:10px; background:#16a34a; color:white; padding:8px; width:100%;">
-                Aplicar
+            <h4>Gestionar Archivos</h4>
+            <div id="gestionFilesList" style="margin: 15px 0; max-height:400px; overflow-y:auto;"></div>
+            <button onclick="aplicarGestionArchivos()" style="margin-top:20px; background:#16a34a; color:white; padding:12px; width:100%;">
+                Aplicar y Cerrar
             </button>
         </div>
     </div>
@@ -331,17 +389,17 @@
     <div id="filtroModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="cerrarModal('filtroModal')">×</span>
-            <h4>Filtro</h4>
-            <div style="text-align: left; margin: 10px 0; font-size:12px;">
-                <label><input type="checkbox" id="visA1" checked> A1</label><br>
-                <label><input type="checkbox" id="visA2" checked> A2</label><br>
-                <label><input type="checkbox" id="visA3" checked> A3</label><br>
-                <label><input type="checkbox" id="visIMP" checked> Imp</label><br>
-                <label><input type="checkbox" id="visProyecto" checked> Proy</label><br>
-                <label><input type="checkbox" id="visVERENCAMPO" checked> Campo</label>
+            <h4>Filtrar Visibilidad</h4>
+            <div style="text-align: left; margin: 15px 0;">
+                <label><input type="checkbox" id="visA1" checked> A1 (Rojo)</label><br>
+                <label><input type="checkbox" id="visA2" checked> A2 (Amarillo)</label><br>
+                <label><input type="checkbox" id="visA3" checked> A3 (Verde)</label><br>
+                <label><input type="checkbox" id="visIMP" checked> Imposibilidad (Negro)</label><br>
+                <label><input type="checkbox" id="visProyecto" checked> Proyecto Total (Azul)</label><br>
+                <label><input type="checkbox" id="visVERENCAMPO" checked> Ver en Campo (Naranja)</label>
             </div>
-            <button onclick="aplicarFiltroVisibilidad()" style="margin-top:10px; background:#1d4ed8; color:white; padding:8px; width:100%;">
-                Aplicar
+            <button onclick="aplicarFiltroVisibilidad()" style="margin-top:20px; background:#1d4ed8; color:white; padding:12px; width:100%;">
+                Aplicar Filtro
             </button>
         </div>
     </div>
@@ -390,6 +448,16 @@
             autopan: false
         }).addTo(map);
 
+        const coloresGrupos = [
+            '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', 
+            '#00ffff', '#ffa500', '#a52a2a', '#808000', '#800080',
+            '#ff69b4', '#4b0082', '#20b2aa', '#8b4513', '#32cd32'
+        ];
+
+        var grupos = {};
+
+        var matrizUbicaciones = new Map();
+
         function normalizarSuministro(s) {
             if (!s) return '';
             return s.toString().trim().replace(/\s+/g, ' ').toUpperCase();
@@ -422,6 +490,49 @@
                 fillOpacity: 0.85
             });
         }
+
+        L.Control.UbicacionButton = L.Control.extend({
+            options: { position: 'topright' },
+            onAdd: function(map) {
+                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                this.button = L.DomUtil.create('a', '', container);
+                this.button.href = '#';
+                this.button.title = 'Mi ubicación en tiempo real';
+                this.button.innerHTML = '<i class="fa fa-location-arrow" style="font-size:18px; line-height:26px;"></i>';
+                this.button.style.width = '34px';
+                this.button.style.height = '34px';
+                this.button.style.display = 'block';
+                this.button.style.textAlign = 'center';
+                this.button.style.backgroundColor = '#ffffff';
+                this.button.style.borderBottom = '1px solid #ccc';
+
+                L.DomEvent
+                    .on(this.button, 'mousedown', L.DomEvent.stopPropagation)
+                    .on(this.button, 'click', L.DomEvent.preventDefault)
+                    .on(this.button, 'click', () => {
+                        toggleLocation();
+                        this.updateActiveState();
+                    });
+
+                this.updateActiveState();
+                return container;
+            },
+            updateActiveState: function() {
+                this.button.parentElement.classList.toggle('location-control-active', isLocationActive);
+            }
+        });
+
+        const ubicacionControl = new L.Control.UbicacionButton();
+        ubicacionControl.addTo(map);
+
+        document.getElementById('toggleLeyenda').addEventListener('click', function() {
+            const leyenda = document.getElementById('leyenda');
+            const icon = this.querySelector('i');
+            leyenda.classList.toggle('hidden');
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+            this.title = leyenda.classList.contains('hidden') ? "Mostrar leyenda" : "Ocultar leyenda";
+        });
 
         document.getElementById('btn-matriz').addEventListener('click', function() {
             document.getElementById('excelFile').click();
@@ -613,7 +724,7 @@
             });
             const distritos = [...allDistritos].sort();
             const selectDist = document.getElementById('distritoFilter');
-            selectDist.innerHTML = '<option value="">Selecciona distrito</option><option value="TODOS">TODOS</option>';
+            selectDist.innerHTML = '<option value="">Selecciona distrito</option><option value="TODOS">TODOS DISTRITOS</option>';
             distritos.forEach(d => {
                 let opt = document.createElement('option');
                 opt.value = d; opt.text = d;
@@ -668,17 +779,17 @@
             loadedFiles.forEach((file, index) => {
                 const visChecked = file.visible ? 'checked' : '';
                 html += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; background:#f1f5f9; margin:6px 0; border-radius:6px; border:1px solid #e2e8f0; font-size:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:#f1f5f9; margin:8px 0; border-radius:8px; border:1px solid #e2e8f0;">
                         <div style="flex:1;">
                             <strong>${file.filename}</strong><br>
-                            <small>${file.markers.length} pts</small>
+                            <small>${file.markers.length} puntos</small>
                         </div>
-                        <div style="display:flex; gap:8px;">
-                            <label title="Visible / Analizar">
-                                <input type="checkbox" class="file-vis" data-index="${index}" ${visChecked}>
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <label title="Visible en mapa y disponible para análisis">
+                                <input type="checkbox" class="file-vis" data-index="${index}" ${visChecked}> Visible / Analizar
                             </label>
-                            <button class="danger" style="width:auto; height:20px; padding:0 6px; font-size:10px;" 
-                                    onclick="eliminarArchivo(${index})">X</button>
+                            <button class="danger" style="width:auto; height:28px; padding:0 12px; font-size:13px;" 
+                                    onclick="eliminarArchivo(${index})">Eliminar</button>
                         </div>
                     </div>
                 `;
@@ -689,7 +800,7 @@
         }
 
         function eliminarArchivo(index) {
-            if (!confirm(`¿Eliminar "${loadedFiles[index].filename}"?`)) return;
+            if (!confirm(`¿Eliminar "${loadedFiles[index].filename}" permanentemente?`)) return;
 
             const file = loadedFiles[index];
             if (map.hasLayer(file.clusterGroup)) map.removeLayer(file.clusterGroup);
@@ -728,7 +839,7 @@
             });
 
             if (datos.length === 0) {
-                alert('No hay archivos seleccionados.');
+                alert('No hay archivos seleccionados para análisis.');
                 return;
             }
 
@@ -770,12 +881,12 @@
                 totales.total++;
             });
 
-            let html = '<table style="width:100%; border-collapse:collapse; font-size:12px;"><tr><th>Distrito</th><th>A1</th><th>A2</th><th>A3</th><th>Imp</th><th>Proy</th><th>Campo</th><th>Total</th></tr>';
+            let html = '<table style="width:100%; border-collapse:collapse;"><tr><th>Distrito</th><th>A1</th><th>A2</th><th>A3</th><th>Impos.</th><th>Proy.</th><th>Ver Campo</th><th>Total</th></tr>';
             Object.keys(porDistrito).sort().forEach(dist => {
                 const d = porDistrito[dist];
                 html += `<tr><td>${dist}</td><td>${d.A1}</td><td>${d.A2}</td><td>${d.A3}</td><td>${d.IMPOSIBILIDAD}</td><td>${d.PROYECTO}</td><td>${d.VERENCAMPO}</td><td>${d.total}</td></tr>`;
             });
-            html += `<tr style="font-weight:bold; background:#f0f0f0;"><td>TOTAL</td><td>${totales.A1}</td><td>${totales.A2}</td><td>${totales.A3}</td><td>${totales.IMPOSIBILIDAD}</td><td>${totales.PROYECTO}</td><td>${totales.VERENCAMPO}</td><td>${totales.total}</td></tr></table>`;
+            html += `<tr style="font-weight:bold; background:#f0f0f0;"><td><strong>TOTAL GENERAL</strong></td><td><strong>${totales.A1}</strong></td><td><strong>${totales.A2}</strong></td><td><strong>${totales.A3}</strong></td><td><strong>${totales.IMPOSIBILIDAD}</strong></td><td><strong>${totales.PROYECTO}</strong></td><td><strong>${totales.VERENCAMPO}</strong></td><td><strong>${totales.total}</strong></td></tr></table>`;
 
             document.getElementById('reporteContenido').innerHTML = html;
             document.getElementById('reporteModal').style.display = 'flex';
@@ -788,10 +899,10 @@
             }
 
             const doc = new jsPDF('p', 'mm', 'a4');
-            doc.setFontSize(14);
-            doc.text("Puntos Seleccionados", 20, 20);
-            doc.setFontSize(10);
-            doc.text(`Total: ${selectedMarkers.length} | ${new Date().toLocaleDateString('es-PE')}`, 20, 28);
+            doc.setFontSize(16);
+            doc.text("Reporte de Puntos Seleccionados - Agua Potable", 20, 20);
+            doc.setFontSize(12);
+            doc.text(`Total: ${selectedMarkers.length} puntos | Fecha: ${new Date().toLocaleDateString('es-PE')}`, 20, 30);
 
             const headers = [["N°", "SUMINISTRO", "Tipo", "Medidor", "Dirección", "Distrito"]];
             const data = selectedMarkers.map((p, i) => [
@@ -806,20 +917,20 @@
             doc.autoTable({
                 head: headers,
                 body: data,
-                startY: 35,
+                startY: 40,
                 theme: 'grid',
-                headStyles: { fillColor: [29, 78, 216], fontSize: 10 },
+                headStyles: { fillColor: [29, 78, 216] },
                 columnStyles: {
-                    0: { cellWidth: 8 },
-                    1: { cellWidth: 35 },
-                    2: { cellWidth: 15 },
-                    3: { cellWidth: 30 },
-                    4: { cellWidth: 50 },
-                    5: { cellWidth: 25 }
+                    0: { cellWidth: 10 },
+                    1: { cellWidth: 40 },
+                    2: { cellWidth: 20 },
+                    3: { cellWidth: 40 },
+                    4: { cellWidth: 60 },
+                    5: { cellWidth: 30 }
                 }
             });
 
-            doc.save("seleccionados.pdf");
+            doc.save("reporte_seleccionados_sin_ubicacion.pdf");
         }
 
         function exportarSeleccionExcel() {
@@ -841,7 +952,7 @@
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Seleccionados");
-            XLSX.writeFile(wb, "seleccionados.xlsx");
+            XLSX.writeFile(wb, "reporte_seleccionados_sin_ubicacion.xlsx");
         }
 
         function aplicarFiltros() {
