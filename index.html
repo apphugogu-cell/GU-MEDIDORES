@@ -589,7 +589,6 @@
             document.getElementById('excelFile').click();
         });
 
-        // CARGA AUTOMÁTICA DE data.json DESDE TU GITHUB (ya con el nombre correcto)
         async function cargarMatrizJsonDesdeGitHub() {
             const urlJson = "https://raw.githubusercontent.com/apphugogu-cell/GU-MEDIDORES/main/data.json";
 
@@ -618,7 +617,7 @@
                 alert(`¡Matriz data.json cargada automáticamente!\n${cargados} suministros con coordenadas válidas.`);
             } catch (err) {
                 console.error(err);
-                alert(`No se pudo cargar data.json.\n\nVerifica:\n1. El archivo está en la raíz del repositorio\n2. Se llama exactamente "data.json" (con punto)\n3. El repositorio es público\n\nPuedes cargar manualmente con el botón.`);
+                alert(`No se pudo cargar data.json.\n\nVerifica:\n1. El archivo está en la raíz del repositorio\n2. Se llama exactamente "data.json"\n3. El repositorio es público\n\nPuedes cargar manualmente con el botón.`);
                 document.getElementById('excelFile').click();
             }
         }
@@ -733,7 +732,6 @@
             e.target.value = '';
         });
 
-        // Resto de funciones (mantén las que ya tenías o copia las del código anterior si las borraste)
         function actualizarDistritos() {
             const allDistritos = new Set();
             loadedFiles.forEach(file => {
@@ -1099,6 +1097,30 @@
 
         map.on('zoomend', controlarVistaPorZoom);
         document.getElementById('distritoFilter').addEventListener('change', aplicarFiltros);
+
+        function actualizarConteos() {
+            const markers = getSelectedVisibleMarkers();
+            const c = { A1:0, A2:0, A3:0, IMPOSIBILIDAD:0, PROYECTO:0, VERENCAMPO:0, total: markers.length };
+            markers.forEach(m => {
+                if (c.hasOwnProperty(m.properties.tipoFiltro)) c[m.properties.tipoFiltro]++;
+            });
+            document.getElementById('modalCountA1').textContent = c.A1;
+            document.getElementById('modalCountA2').textContent = c.A2;
+            document.getElementById('modalCountA3').textContent = c.A3;
+            document.getElementById('modalCountIMP').textContent = c.IMPOSIBILIDAD;
+            document.getElementById('modalCountPROY').textContent = c.PROYECTO;
+            document.getElementById('modalCountVERCAMPO').textContent = c.VERENCAMPO;
+            document.getElementById('modalCountTotal').textContent = c.total;
+            document.getElementById('modalSelectionCount').textContent = selectedMarkers.length;
+        }
+
+        function getSelectedVisibleMarkers() {
+            let markers = [];
+            loadedFiles.forEach(file => {
+                if (file.visible && file.selectedForAnalysis) markers = markers.concat(file.markers);
+            });
+            return markers;
+        }
 
     </script>
 </body>
