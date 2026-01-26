@@ -1,1127 +1,813 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="utf-8">
-    <title>Conexiones Agua Potable - La Libertad</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Portafolio Creativo | Inicio</title>
+    <meta name="description" content="Una plantilla HTML moderna y responsiva para mostrar tu trabajo.">
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-sidebar-v2@3.2.3/css/leaflet-sidebar.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-    
-    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <!-- Fuentes de Google Fonts para una tipografía moderna -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Librería de Iconos (Phosphor Icons) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <style>
-        body { margin:0; padding:0; font-family: 'Segoe UI', Arial, sans-serif; background:#f8f9ff; }
-        #map { height: 100vh; width: 100%; }
-        
-        .leaflet-sidebar {
-            background: linear-gradient(to bottom, #ffffff 0%, #f0f7ff 100%) !important;
-            color: #1a365d !important;
-            border-right: 1px solid #bfdbfe;
-            box-shadow: 0 0 25px rgba(0,0,0,0.08);
-        }
-        
-        .leaflet-sidebar-tabs ul li a {
-            background: #e0f2fe !important;
-            color: #0369a1 !important;
-        }
-        
-        .leaflet-sidebar-tabs ul li a:hover,
-        .leaflet-sidebar-tabs ul li.active a {
-            background: #bae6fd !important;
-        }
-        
-        .leaflet-sidebar-header {
-            background: #1d4ed8;
-            color: white;
-            padding: 1px;
-            font-size: 20px;
-            font-weight: 600;
-            border-bottom: 1px solid #3b82f6;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .leaflet-sidebar-content {
-            padding: 24px 0px;
-        }
-        
-        h4 {
-            color: #1d4ed8;
-            font-size: 22px;
-            margin: 0 0 20px 0;
-            text-align: center;
-            font-weight: 600;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #bfdbfe;
-        }
-        
-        button {
-            width: 100%;
-            height: 30px;
-            font-size: 15px;
-            font-weight: 600;
-            margin: 10px 0;
-            padding: 0 16px;
-            border-radius: 8px;
-            border: none;
-            background: #3b82f6;
-            color: white;
-            cursor: pointer;
-            transition: all 0.25s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 2px 8px rgba(59,130,246,0.25);
-        }
-        
-        button:hover {
-            background: #2563eb;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(59,130,246,0.35);
-        }
-        
-        button:disabled {
-            background: #cbd5e1;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        button.danger {
-            background: #ef4444 !important;
-        }
-        
-        button.danger:hover:not(:disabled) {
-            background: #dc2626 !important;
+        /* --- VARIABLES CSS & RESET --- */
+        :root {
+            /* Paleta de Colores */
+            --primary-color: #4f46e5; /* Índigo */
+            --primary-hover: #4338ca;
+            --secondary-color: #0f172a; /* Azul oscuro casi negro */
+            --accent-color: #f43f5e; /* Rosa acento */
+            
+            --bg-color: #f8fafc;
+            --surface-color: #ffffff;
+            --text-main: #334155;
+            --text-light: #64748b;
+            
+            /* Espaciado y Bordes */
+            --container-width: 1200px;
+            --header-height: 80px;
+            --radius-md: 12px;
+            --radius-lg: 24px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+
+            /* Transiciones */
+            --transition: all 0.3s ease;
         }
 
-        select, input[type="text"], input[type="file"] {
-            width: 100%;
-            padding: 14px 16px;
-            font-size: 15px;
-            border: 1px solid #93c5fd;
-            border-radius: 8px;
-            margin: 10px 0;
-            background: white;
-        }
-        
-        select:focus, input:focus {
-            border-color: #3b82f6;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
-        }
-
-        #leyenda {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: white;
-            padding: 14px 18px;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-            font-size: 13px;
-            border: 1px solid #e5e7eb;
-            z-index: 1000;
-        }
-        
-        .leyenda-item { display: flex; align-items: center; margin: 6px 0; }
-        .leyenda-color { width: 16px; height: 16px; border-radius: 50%; margin-right: 10px; border: 1px solid #666; }
-        
-        .legend-toggle {
-            position: absolute;
-            bottom: 100px;
-            right: 30px;
-            z-index: 1001;
-            background: white;
-            border: 2px solid #4682b4;
-            border-radius: 50%;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.25);
-            font-size: 18px;
-            color: #4682b4;
-            transition: all 0.25s;
-        }
-        
-        .legend-toggle:hover {
-            background: #4682b4;
-            color: white;
-            transform: scale(1.08);
-            box-shadow: 0 5px 15px rgba(70,130,180,0.4);
-        }
-        
-        #leyenda.hidden { display: none !important; }
-        
-        .location-control-active { background-color: #a5d8ff !important; }
-        .location-control-active i { animation: pulse 2s infinite; }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.25); }
-            100% { transform: scale(1); }
-        }
-
-        .modal { 
-            display: none; 
-            position: fixed; 
-            z-index: 2000; 
-            left: 0; top: 0; 
-            width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.6); 
-            justify-content: center; 
-            align-items: center; 
-        }
-        .modal-content { 
-            background: white; 
-            color: #1f2937; 
-            padding: 24px; 
-            border-radius: 12px; 
-            width: 420px; 
-            max-height: 90vh; 
-            overflow-y: auto; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.25); 
-        }
-        .close { float: right; font-size: 28px; cursor: pointer; color: #666; }
-
-        #info-panel {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 360px;
-            height: 100%;
-            background: white;
-            box-shadow: -8px 0 25px rgba(0,0,0,0.3);
-            z-index: 1050;
-            transform: translateX(100%);
-            transition: transform 0.35s ease;
-            overflow-y: auto;
-            padding: 20px 24px;
+        * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
-            border-left: 5px solid #1d4ed8;
         }
 
-        #info-panel.open {
-            transform: translateX(0);
+        html {
+            scroll-behavior: smooth;
         }
 
-        #info-panel .close-btn {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            font-size: 32px;
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            color: var(--secondary-color);
+            line-height: 1.2;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* --- UTILIDADES --- */
+        .container {
+            max-width: var(--container-width);
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .section-padding {
+            padding: 100px 0;
+        }
+
+        .text-center { text-align: center; }
+        
+        .section-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .section-subtitle {
+            color: var(--primary-color);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.8rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: var(--transition);
             cursor: pointer;
-            color: #64748b;
+            border: none;
+            font-size: 1rem;
         }
 
-        #info-panel h2 {
-            margin: 0 0 20px 0;
-            color: #1d4ed8;
-            font-size: 22px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #bfdbfe;
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
         }
 
-        #info-panel .detail-item {
-            margin: 14px 0;
-            font-size: 15px;
-            line-height: 1.5;
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(79, 70, 229, 0.23);
         }
 
-        #info-panel .detail-item strong {
-            color: #1e293b;
-            min-width: 110px;
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* --- HEADER & NAV --- */
+        header {
+            height: var(--header-height);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo span { color: var(--primary-color); }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            font-weight: 500;
+            color: var(--text-main);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 0;
+            background-color: var(--primary-color);
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--secondary-color);
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            padding-top: calc(var(--header-height) + 60px);
+            padding-bottom: 100px;
+            display: flex;
+            align-items: center;
+            min-height: 90vh;
+        }
+
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-text p {
+            font-size: 1.25rem;
+            color: var(--text-light);
+            margin-bottom: 2rem;
+            max-width: 500px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .hero-image {
+            position: relative;
+        }
+
+        .hero-image img {
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            object-fit: cover;
+            aspect-ratio: 4/3;
+        }
+
+        /* Elemento decorativo */
+        .blob {
+            position: absolute;
+            z-index: -1;
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(180deg, rgba(79, 70, 229, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            filter: blur(60px);
+        }
+
+        /* --- SERVICES SECTION --- */
+        .services {
+            background-color: var(--surface-color);
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .service-card {
+            background: var(--bg-color);
+            padding: 2.5rem;
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            background: white;
+            box-shadow: var(--shadow-md);
+            border-color: rgba(79, 70, 229, 0.1);
+        }
+
+        .icon-box {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(79, 70, 229, 0.1);
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .service-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .service-card p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        /* --- PORTFOLIO SECTION --- */
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .project-card {
+            background: var(--surface-color);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            group: hover;
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .project-img {
+            height: 250px;
+            overflow: hidden;
+        }
+
+        .project-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .project-card:hover .project-img img {
+            transform: scale(1.05);
+        }
+
+        .project-info {
+            padding: 1.5rem;
+        }
+
+        .project-tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
             display: inline-block;
         }
 
-        .resaltado-clic {
-            fill: #22c55e !important;
-            fill-opacity: 1 !important;
-            stroke: #14532d !important;
-            stroke-width: 6 !important;
-            stroke-opacity: 1 !important;
-            r: 12 !important;
-            filter: drop-shadow(0 0 10px #22c55e) drop-shadow(0 0 4px #15803d) !important;
-            transition: all 0.2s ease;
+        .project-info h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
         }
 
-        @media print {
-            #leyenda, .leaflet-control-container, .leaflet-sidebar, .legend-toggle, #info-panel { display: none !important; }
-            #map { height: 100vh !important; }
-            body::before { 
-                content: "Mapa de Conexiones de Agua Potable - Región La Libertad"; 
-                display: block; 
-                text-align: center; 
-                font-size: 26px; 
-                font-weight: bold; 
-                color: #1d4ed8; 
-                margin: 30px 0 20px; 
+        .project-info p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .project-link {
+            color: var(--secondary-color);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .project-link:hover { color: var(--primary-color); }
+
+        /* --- CONTACT SECTION --- */
+        .contact {
+            background-color: var(--surface-color);
+        }
+
+        .contact-container {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 4rem;
+            margin-top: 3rem;
+            background-color: var(--bg-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .contact-info {
+            padding: 3rem;
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .contact-info h3 { color: white; margin-bottom: 1.5rem; }
+        .contact-info p { color: rgba(255,255,255,0.8); margin-bottom: 2rem; }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-item i { font-size: 1.5rem; }
+
+        .contact-form-wrapper {
+            padding: 3rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: var(--transition);
+            background-color: white;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            background-color: var(--secondary-color);
+            color: #94a3b8;
+            padding: 3rem 0;
+            text-align: center;
+        }
+
+        .footer-logo {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .social-links a {
+            color: white;
+            font-size: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .social-links a:hover {
+            color: var(--primary-color);
+            transform: translateY(-3px);
+        }
+
+        /* --- RESPONSIVE / MOBILE --- */
+        @media (max-width: 992px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
             }
+
+            .hero-text p { margin: 0 auto 2rem auto; }
+            .hero-buttons { justify-content: center; }
+            
+            .contact-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: var(--header-height);
+                left: 0;
+                width: 100%;
+                background-color: white;
+                flex-direction: column;
+                padding: 2rem;
+                box-shadow: var(--shadow-md);
+                gap: 1.5rem;
+                text-align: center;
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .section-title { font-size: 2rem; }
+            .hero-text h1 { font-size: 2.5rem; }
+            
+            .contact-form-wrapper, .contact-info { padding: 2rem; }
         }
     </style>
 </head>
-<body data-print-date="">
+<body>
 
-    <div id="map"></div>
-
-    <div id="sidebar" class="leaflet-sidebar collapsed">
-        <div class="leaflet-sidebar-tabs">
-            <ul role="tablist">
-                <li><a href="#home" role="tab"><i class="fa fa-bars"></i></a></li>
-            </ul>
-        </div>
-
-        <div class="leaflet-sidebar-content">
-            <div class="leaflet-sidebar-pane active" id="home">
-                <h1 class="leaflet-sidebar-header">
-                    <i class="fa fa-tint"></i> Conexiones Agua Potable
-                    <span class="leaflet-sidebar-close"><i class="fa fa-caret-left"></i></span>
-                </h1>
-                
-                <input type="file" id="excelFile" accept=".xlsx" multiple />
-                
-                <button id="btn-matriz" style="background:#7c3aed; color:white; margin:10px 0;">
-                    <i class="fa fa-database"></i> Cargar Matriz del Proyecto
-                </button>
-                
-                <select id="distritoFilter">
-                    <option value="">Selecciona distrito</option>
-                </select>
-                
-                <button onclick="abrirGestionArchivos()"><i class="fa fa-folder"></i> Gestionar Archivos</button>
-                
-                <div style="margin-top:20px;">
-                    <button id="btnConteo" disabled onclick="ejecutarConteo()"><i class="fa fa-chart-pie"></i> Ver Conteo General</button>
-                    <button id="btnReporte" disabled onclick="ejecutarReporte()"><i class="fa fa-table"></i> Reporte por Localidad</button>
-                    <button id="btnFiltro" onclick="abrirFiltroVisibilidad()"><i class="fa fa-filter"></i> Filtrar Visibilidad</button>
-                </div>
-                
-                <button id="btnSeleccionar" onclick="toggleModoClic()"><i class="fa fa-hand-pointer"></i> SELECCIONAR PUNTOS</button>
-                <button onclick="limpiarSeleccion()"><i class="fa fa-eraser"></i> Limpiar Selección</button>
-                
-                <button onclick="prepararAgrupamiento()">
-                    <i class="fa fa-object-group"></i> Agrupar Puntos
-                </button>
-                
-                <button onclick="imprimirMapaNormal()">
-                    <i class="fa fa-print"></i> IMPRIMIR MAPA
-                </button>
-                
-                <hr style="border-color:#bfdbfe; margin:20px 0;">
-                
-                <input type="text" id="search-box" placeholder="Buscar SUMINISTRO / Dir / Medidor">
-                
-                <hr style="border-color:#bfdbfe; margin:20px 0;">
-                
-                <div id="export-buttons">
-                    <button onclick="exportarSeleccionPDF()"><i class="fa fa-file-pdf"></i> PDF (sin ubicación)</button>
-                    <button onclick="exportarSeleccionExcel()"><i class="fa fa-file-excel"></i> EXCEL (sin ubicación)</button>
-                </div>
-                <small style="color:#64748b; display:block; text-align:center; margin-top:10px;">
-                    Exporta la selección actual sin coordenadas
-                </small>
-            </div>
-        </div>
-    </div>
-
-    <div id="info-panel">
-        <span class="close-btn" onclick="cerrarPanelInfo()">×</span>
-        <h2>Detalle del Suministro</h2>
-        <div id="info-content"></div>
-    </div>
-
-    <div id="leyenda" class="hidden">
-        <strong>Leyenda</strong><br>
-        <div class="leyenda-item"><div class="leyenda-color" style="background:#d32f2f;"></div>A1</div>
-        <div class="leyenda-item"><div class="leyenda-color" style="background:#ffeb3b;"></div>A2</div>
-        <div class="leyenda-item"><div class="leyenda-color" style="background:#4caf50;"></div>A3</div>
-        <div class="leyenda-item"><div class="leyenda-color" style="background:#212121;"></div>Imposibilidad</div>
-        <div class="leyenda-item"><div class="leyenda-color" style="background:#4682b4;"></div>Proyecto Total</div>
-        <div class="leyenda-item"><div class="leyenda-color" style="background:#ff9800;"></div>Ver en Campo</div>
-    </div>
-
-    <div class="legend-toggle" id="toggleLeyenda" title="Mostrar/Ocultar leyenda">
-        <i class="fa fa-eye"></i>
-    </div>
-
-    <div id="conteoModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="cerrarModal('conteoModal')">×</span>
-            <h4>Conteo General</h4>
-            <div>A1: <span id="modalCountA1">0</span></div>
-            <div>A2: <span id="modalCountA2">0</span></div>
-            <div>A3: <span id="modalCountA3">0</span></div>
-            <div>Imposibilidad: <span id="modalCountIMP">0</span></div>
-            <div>Proyecto Total: <span id="modalCountPROY">0</span></div>
-            <div>Ver en Campo: <span id="modalCountVERCAMPO">0</span></div>
-            <hr>
-            <div>Total cargados: <span id="modalCountTotal">0</span></div>
-            <div>Selección actual: <span id="modalSelectionCount">0</span> puntos</div>
-        </div>
-    </div>
-
-    <div id="reporteModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="cerrarModal('reporteModal')">×</span>
-            <h4>Reporte por Localidad</h4>
-            <div id="reporteContenido"></div>
-        </div>
-    </div>
-
-    <div id="gestionArchivosModal" class="modal">
-        <div class="modal-content" style="width:480px;">
-            <span class="close" onclick="cerrarModal('gestionArchivosModal')">×</span>
-            <h4>Gestionar Archivos</h4>
-            <div id="gestionFilesList" style="margin: 15px 0; max-height:400px; overflow-y:auto;"></div>
-            <button onclick="aplicarGestionArchivos()" style="margin-top:20px; background:#16a34a; color:white; padding:12px; width:100%;">
-                Aplicar y Cerrar
+    <!-- Header / Navegación -->
+    <header>
+        <div class="container nav-container">
+            <a href="#" class="logo">
+                <i class="ph ph-hexagon-fill"></i>
+                Dev<span>Studio</span>
+            </a>
+            <button class="mobile-menu-btn" aria-label="Abrir menú">
+                <i class="ph ph-list"></i>
             </button>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#hero">Inicio</a></li>
+                    <li><a href="#services">Servicios</a></li>
+                    <li><a href="#portfolio">Portafolio</a></li>
+                    <li><a href="#about">Sobre Mí</a></li>
+                    <li><a href="#contact" class="btn btn-primary" style="padding: 0.5rem 1.2rem;">Contactar</a></li>
+                </ul>
+            </nav>
         </div>
-    </div>
+    </header>
 
-    <div id="filtroModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="cerrarModal('filtroModal')">×</span>
-            <h4>Filtrar Visibilidad</h4>
-            <div style="text-align: left; margin: 15px 0;">
-                <label><input type="checkbox" id="visA1" checked> A1 (Rojo)</label><br>
-                <label><input type="checkbox" id="visA2" checked> A2 (Amarillo)</label><br>
-                <label><input type="checkbox" id="visA3" checked> A3 (Verde)</label><br>
-                <label><input type="checkbox" id="visIMP" checked> Imposibilidad (Negro)</label><br>
-                <label><input type="checkbox" id="visProyecto" checked> Proyecto Total (Azul)</label><br>
-                <label><input type="checkbox" id="visVERENCAMPO" checked> Ver en Campo (Naranja)</label>
-            </div>
-            <button onclick="aplicarFiltroVisibilidad()" style="margin-top:20px; background:#1d4ed8; color:white; padding:12px; width:100%;">
-                Aplicar Filtro
-            </button>
-        </div>
-    </div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-    <script src="https://unpkg.com/leaflet-sidebar-v2@3.2.3/js/leaflet-sidebar.min.js"></script>
-    <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://unpkg.com/jspdf-autotable@3.5.23/dist/jspdf.plugin.autotable.js"></script>
-
-    <script>
-        const { jsPDF } = window.jspdf;
-
-        var map = L.map('map').setView([-7.8, -78.5], 9);
-
-        var baseLayers = {
-            "Calles": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }),
-            "Satélite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' })
-        };
-        baseLayers["Calles"].addTo(map);
-        L.control.layers(baseLayers, null, {position: 'topright'}).addTo(map);
-
-        var loadedFiles = [];
-        var selectedMarkers = [];
-        var modoClic = false;
-
-        var visibilidad = {
-            A1: true,
-            A2: true,
-            A3: true,
-            IMPOSIBILIDAD: true,
-            PROYECTO: true,
-            VERENCAMPO: true
-        };
-
-        var sidebar = L.control.sidebar({
-            container: 'sidebar',
-            position: 'left',
-            closeButton: true,
-            autopan: false
-        }).addTo(map);
-
-        var matrizUbicaciones = new Map();
-
-        let currentHighlightedMarker = null;
-        let currentSelectedMarker = null;
-
-        function normalizarSuministro(s) {
-            if (!s) return '';
-            return s.toString().trim().replace(/\s+/g, ' ').toUpperCase();
-        }
-
-        function tienePalabraCampo(texto) {
-            if (!texto) return false;
-            return texto.toString().toLowerCase().includes('campo');
-        }
-
-        function getColor(tipo) {
-            switch(tipo) {
-                case 'A1': return '#d32f2f';
-                case 'A2': return '#ffeb3b';
-                case 'A3': return '#4caf50';
-                case 'IMPOSIBILIDAD': return '#212121';
-                case 'PROYECTO': return '#4682b4';
-                case 'VERENCAMPO': return '#ff9800';
-                default: return '#888888';
-            }
-        }
-
-        function crearMarcador(lat, lng, color) {
-            return L.circleMarker([lat, lng], {
-                radius: 6,
-                fillColor: color,
-                color: '#000',
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.85
-            });
-        }
-
-        function resaltarMarcador(marker) {
-            if (currentHighlightedMarker && currentHighlightedMarker !== marker) {
-                currentHighlightedMarker.setStyle({
-                    fillColor: currentHighlightedMarker.originalColor || currentHighlightedMarker.options.fillColor,
-                    radius: 6,
-                    weight: 1,
-                    color: '#000'
-                });
-            }
-            marker.originalColor = marker.options.fillColor;
-            marker.setStyle({ className: 'resaltado-clic' });
-            currentHighlightedMarker = marker;
-        }
-
-        function quitarResaltado() {
-            if (currentHighlightedMarker) {
-                currentHighlightedMarker.setStyle({
-                    fillColor: currentHighlightedMarker.originalColor || currentHighlightedMarker.options.fillColor,
-                    radius: 6,
-                    weight: 1,
-                    color: '#000'
-                });
-                currentHighlightedMarker = null;
-            }
-        }
-
-        function mostrarInfoPanel(props) {
-            const content = document.getElementById('info-content');
-            const suministro = props.SUMINISTRO || props['SUMINISTRO'] || props['N° SUMINISTRO'] || props['COD SUMINISTRO'] || 'SIN SUMINISTRO';
-            const id = props.ID || 'N/D';
-            const medidor = props.MEDIDOR || 'SIN MEDIDOR';
-            const actividad = props.ACTIVIDAD || 'SIN DATO';
-            const usuario = props.Usuario || '—';
-            const direccion = props.DIRECCION || '—';
-            const distrito = props.DISTRITO || '—';
-            const verCampo = tienePalabraCampo([
-                props['VER EN CAMPO'],
-                props['VER_EN_CAMPO'],
-                props['VERENCAMPO'],
-                props.ACTIVIDAD,
-                props.OBSERVACION,
-                props.NOTAS
-            ].filter(Boolean).join(' ')) ? 'SÍ' : 'NO';
-
-            content.innerHTML = `
-                <div style="font-size:20px; font-weight:bold; color:#1d4ed8; margin-bottom:16px;">
-                    ${suministro}
+    <main>
+        <!-- Hero Section -->
+        <section id="hero" class="hero">
+            <div class="container hero-content">
+                <div class="hero-text">
+                    <span class="section-subtitle">Bienvenido a mi mundo digital</span>
+                    <h1>Transformo ideas complejas en <span style="color: var(--primary-color);">diseños web</span> elegantes.</h1>
+                    <p>Soy un desarrollador y diseñador apasionado por crear interfaces modernas, funcionales y fáciles de usar para negocios y emprendedores.</p>
+                    <div class="hero-buttons">
+                        <a href="#portfolio" class="btn btn-primary">
+                            Ver Proyectos <i class="ph ph-arrow-right"></i>
+                        </a>
+                        <a href="#contact" class="btn btn-outline">
+                            Hablemos
+                        </a>
+                    </div>
                 </div>
-                ${id !== 'N/D' ? `<div style="color:#555; margin-bottom:20px; font-size:14px;">ID: ${id}</div>` : ''}
-                <div class="detail-item"><strong>Medidor:</strong> ${medidor}</div>
-                <div class="detail-item"><strong>Actividad:</strong> ${actividad}</div>
-                <div class="detail-item"><strong>Usuario:</strong> ${usuario}</div>
-                <div class="detail-item"><strong>Dirección:</strong> ${direccion}</div>
-                <div class="detail-item"><strong>Distrito:</strong> ${distrito}</div>
-                <div class="detail-item"><strong>Ver en Campo:</strong> ${verCampo}</div>
-            `;
+                <div class="hero-image">
+                    <div class="blob"></div>
+                    <!-- Imagen aleatoria de picsum de alta calidad -->
+                    <img src="https://picsum.photos/seed/webdesign/800/600.jpg" alt="Espacio de trabajo creativo">
+                </div>
+            </div>
+        </section>
 
-            document.getElementById('info-panel').classList.add('open');
-        }
+        <!-- Services Section -->
+        <section id="services" class="section-padding services">
+            <div class="container">
+                <div class="text-center">
+                    <span class="section-subtitle">Lo que hago</span>
+                    <h2 class="section-title">Mis Servicios</h2>
+                    <p style="color: var(--text-light); max-width: 600px; margin: 0 auto;">Soluciones integrales para llevar tu presencia online al siguiente nivel con tecnología de punta.</p>
+                </div>
 
-        function cerrarPanelInfo() {
-            document.getElementById('info-panel').classList.remove('open');
-            quitarResaltado();
-            currentSelectedMarker = null;
-        }
-
-        L.Control.UbicacionButton = L.Control.extend({
-            options: { position: 'topright' },
-            onAdd: function(map) {
-                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-                this.button = L.DomUtil.create('a', '', container);
-                this.button.href = '#';
-                this.button.title = 'Mi ubicación en tiempo real';
-                this.button.innerHTML = '<i class="fa fa-location-arrow" style="font-size:18px; line-height:26px;"></i>';
-                this.button.style.width = '34px';
-                this.button.style.height = '34px';
-                this.button.style.display = 'block';
-                this.button.style.textAlign = 'center';
-                this.button.style.backgroundColor = '#ffffff';
-                this.button.style.borderBottom = '1px solid #ccc';
-
-                L.DomEvent
-                    .on(this.button, 'mousedown', L.DomEvent.stopPropagation)
-                    .on(this.button, 'click', L.DomEvent.preventDefault)
-                    .on(this.button, 'click', () => {});
-
-                return container;
-            }
-        });
-
-        const ubicacionControl = new L.Control.UbicacionButton();
-        ubicacionControl.addTo(map);
-
-        document.getElementById('toggleLeyenda').addEventListener('click', function() {
-            const leyenda = document.getElementById('leyenda');
-            const icon = this.querySelector('i');
-            leyenda.classList.toggle('hidden');
-            icon.classList.toggle('fa-eye');
-            icon.classList.toggle('fa-eye-slash');
-            this.title = leyenda.classList.contains('hidden') ? "Mostrar leyenda" : "Ocultar leyenda";
-        });
-
-        document.getElementById('btn-matriz').addEventListener('click', function() {
-            document.getElementById('excelFile').click();
-        });
-
-        async function cargarMatrizJsonDesdeGitHub() {
-            const urlJson = "https://raw.githubusercontent.com/apphugogu-cell/GU-MEDIDORES/main/data.json";
-
-            try {
-                const response = await fetch(urlJson);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-                const json = await response.json();
-
-                let cargados = 0;
-                matrizUbicaciones.clear();
-
-                json.forEach(row => {
-                    const suministro = normalizarSuministro(
-                        row.SUMINISTRO || row['SUMINISTRO'] || row['N° SUMINISTRO'] || row['COD SUMINISTRO'] || ''
-                    );
-                    const lat = parseFloat(row.LATITUD || row.LAT || row.Latitud);
-                    const lng = parseFloat(row.LONGITUD || row.LON || row.Longitud);
-
-                    if (suministro && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-                        matrizUbicaciones.set(suministro, { lat, lng });
-                        cargados++;
-                    }
-                });
-
-                alert(`¡Matriz data.json cargada automáticamente!\n${cargados} suministros con coordenadas válidas.`);
-            } catch (err) {
-                console.error(err);
-                alert(`No se pudo cargar data.json.\n\nVerifica:\n1. El archivo está en la raíz del repositorio\n2. Se llama exactamente "data.json" (con punto)\n3. El repositorio es público\n\nPuedes cargar manualmente con el botón.`);
-                document.getElementById('excelFile').click();
-            }
-        }
-
-        window.addEventListener('load', cargarMatrizJsonDesdeGitHub);
-
-        document.getElementById('excelFile').addEventListener('change', function(e) {
-            const files = e.target.files;
-            if (files.length === 0) return;
-
-            let conUbicacionPropia = 0;
-            let ubicadosPorMatriz = 0;
-            let noUbicados = 0;
-
-            Array.from(files).forEach(file => {
-                var reader = new FileReader();
-                reader.onload = function(ev) {
-                    var data = new Uint8Array(ev.target.result);
-                    var workbook = XLSX.read(data, {type: 'array'});
-                    var sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    var json = XLSX.utils.sheet_to_json(sheet, {defval: ""});
-
-                    const fileEntry = {
-                        filename: file.name,
-                        data: json,
-                        markers: [],
-                        clusterGroup: L.markerClusterGroup({
-                            chunkedLoading: true,
-                            disableClusteringAtZoom: 16,
-                            maxClusterRadius: 50
-                        }),
-                        individualLayer: L.layerGroup(),
-                        visible: true,
-                        selectedForAnalysis: true
-                    };
-
-                    json.forEach(row => {
-                        let lat = parseFloat(row.LATITUD || row.LAT || row.Latitud);
-                        let lng = parseFloat(row.LONGITUD || row.LON || row.Longitud);
-
-                        let suministro = normalizarSuministro(row.SUMINISTRO || row['SUMINISTRO'] || row['N° SUMINISTRO'] || row['COD SUMINISTRO']);
-
-                        if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
-                            if (suministro && matrizUbicaciones.has(suministro)) {
-                                const info = matrizUbicaciones.get(suministro);
-                                lat = info.lat;
-                                lng = info.lng;
-                                ubicadosPorMatriz++;
-                            } else {
-                                noUbicados++;
-                                return;
-                            }
-                        } else {
-                            conUbicacionPropia++;
-                            if (suministro) {
-                                matrizUbicaciones.set(suministro, {lat, lng});
-                            }
-                        }
-
-                        const textoCampo = [
-                            row['VER EN CAMPO'],
-                            row['VER_EN_CAMPO'],
-                            row['VERENCAMPO'],
-                            row.ACTIVIDAD,
-                            row.OBSERVACION,
-                            row.NOTAS
-                        ].filter(Boolean).join(' ').toLowerCase();
-
-                        const esVerEnCampo = tienePalabraCampo(textoCampo);
-
-                        const actividadRaw = (row.ACTIVIDAD || '').toString().trim().toUpperCase();
-                        let tipo = 'PROYECTO';
-                        
-                        if (esVerEnCampo) tipo = 'VERENCAMPO';
-                        else if (actividadRaw === 'A1') tipo = 'A1';
-                        else if (actividadRaw === 'A2') tipo = 'A2';
-                        else if (actividadRaw === 'A3') tipo = 'A3';
-                        else if (actividadRaw === 'IMPOSIBILIDAD') tipo = 'IMPOSIBILIDAD';
-
-                        const color = getColor(tipo);
-                        var marker = crearMarcador(lat, lng, color);
-                        
-                        marker.properties = { ...row, tipoFiltro: tipo, color: color, filename: file.name };
-
-                        marker.on('click', function(e) {
-                            if (modoClic) {
-                                toggleSeleccionMarker(this);
-                            } else {
-                                resaltarMarcador(this);
-                                mostrarInfoPanel(this.properties);
-                                currentSelectedMarker = this;
-                            }
-                        });
-
-                        fileEntry.markers.push(marker);
-                        fileEntry.clusterGroup.addLayer(marker);
-                        fileEntry.individualLayer.addLayer(marker);
-                    });
-
-                    loadedFiles.push(fileEntry);
-                    actualizarDistritos();
-                    aplicarFiltros();
-                    actualizarBotonesAnalisis();
-
-                    alert(`¡Listo! Cargados ${fileEntry.markers.length} puntos del archivo ${file.name}.\n` +
-                          `Con ubicación propia: ${conUbicacionPropia}\n` +
-                          `Ubicados con matriz: ${ubicadosPorMatriz}\n` +
-                          `Sin ubicación encontrada: ${noUbicados}`);
-                };
-                reader.readAsArrayBuffer(file);
-            });
-            e.target.value = '';
-        });
-
-        function actualizarDistritos() {
-            const allDistritos = new Set();
-            loadedFiles.forEach(file => {
-                file.data.forEach(row => {
-                    if (row.DISTRITO) allDistritos.add(row.DISTRITO);
-                });
-            });
-            const distritos = [...allDistritos].sort();
-            const selectDist = document.getElementById('distritoFilter');
-            selectDist.innerHTML = '<option value="">Selecciona distrito</option><option value="TODOS">TODOS DISTRITOS</option>';
-            distritos.forEach(d => {
-                let opt = document.createElement('option');
-                opt.value = d; opt.text = d;
-                selectDist.appendChild(opt);
-            });
-        }
-
-        function actualizarBotonesAnalisis() {
-            const tieneArchivosSeleccionados = loadedFiles.some(f => f.visible && f.selectedForAnalysis);
-            document.getElementById('btnConteo').disabled = !tieneArchivosSeleccionados;
-            document.getElementById('btnReporte').disabled = !tieneArchivosSeleccionados;
-        }
-
-        function abrirGestionArchivos() {
-            if (loadedFiles.length === 0) return alert('No hay archivos cargados.');
-
-            let html = '';
-            loadedFiles.forEach((file, index) => {
-                const visChecked = file.visible ? 'checked' : '';
-                html += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:#f1f5f9; margin:8px 0; border-radius:8px; border:1px solid #e2e8f0;">
-                        <div style="flex:1;">
-                            <strong>${file.filename}</strong><br>
-                            <small>${file.markers.length} puntos</small>
+                <div class="services-grid">
+                    <article class="service-card">
+                        <div class="icon-box">
+                            <i class="ph ph-desktop"></i>
                         </div>
-                        <div style="display:flex; gap:12px; align-items:center;">
-                            <label title="Visible en mapa y disponible para análisis">
-                                <input type="checkbox" class="file-vis" data-index="${index}" ${visChecked}> Visible / Analizar
-                            </label>
-                            <button class="danger" style="width:auto; height:28px; padding:0 12px; font-size:13px;" 
-                                    onclick="eliminarArchivo(${index})">Eliminar</button>
+                        <h3>Diseño Web UI/UX</h3>
+                        <p>Creo interfaces visuales atractivas enfocadas en la experiencia del usuario y la conversión.</p>
+                    </article>
+
+                    <article class="service-card">
+                        <div class="icon-box">
+                            <i class="ph ph-code"></i>
+                        </div>
+                        <h3>Desarrollo Frontend</h3>
+                        <p>Código limpio, semántico y eficiente utilizando HTML5, CSS3 y JavaScript moderno.</p>
+                    </article>
+
+                    <article class="service-card">
+                        <div class="icon-box">
+                            <i class="ph ph-device-mobile"></i>
+                        </div>
+                        <h3>Diseño Responsivo</h3>
+                        <p>Tu sitio se verá perfecto en cualquier dispositivo, desde teléfonos móviles hasta pantallas grandes.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="section-padding">
+            <div class="container">
+                <div class="hero-content">
+                    <div class="hero-image">
+                        <img src="https://picsum.photos/seed/person/600/700.jpg" alt="Foto del desarrollador" style="border-radius: var(--radius-md); box-shadow: var(--shadow-lg);">
+                    </div>
+                    <div class="hero-text">
+                        <span class="section-subtitle">Sobre Mí</span>
+                        <h2>Diseñador con pasión por el detalle</h2>
+                        <p>Hola, soy Alex. Llevo más de 5 años creando experiencias digitales. Mi objetivo es ayudar a las marcas a conectarse con su audiencia a través de un diseño que no solo se ve bien, sino que funciona perfectamente.</p>
+                        <p>Me especializo en la creación de sitios web veloces, optimizados para SEO y fáciles de mantener.</p>
+                        
+                        <div style="margin-top: 2rem; display: flex; gap: 2rem;">
+                            <div>
+                                <h4 style="font-size: 2rem; color: var(--primary-color);">5+</h4>
+                                <span style="font-size: 0.9rem; color: var(--text-light);">Años de Experiencia</span>
+                            </div>
+                            <div>
+                                <h4 style="font-size: 2rem; color: var(--primary-color);">50+</h4>
+                                <span style="font-size: 0.9rem; color: var(--text-light);">Proyectos Completados</span>
+                            </div>
                         </div>
                     </div>
-                `;
-            });
+                </div>
+            </div>
+        </section>
 
-            document.getElementById('gestionFilesList').innerHTML = html;
-            document.getElementById('gestionArchivosModal').style.display = 'flex';
-        }
+        <!-- Portfolio Section -->
+        <section id="portfolio" class="section-padding services">
+            <div class="container">
+                <div class="text-center">
+                    <span class="section-subtitle">Mi trabajo</span>
+                    <h2 class="section-title">Proyectos Recientes</h2>
+                </div>
 
-        function eliminarArchivo(index) {
-            if (!confirm(`¿Eliminar "${loadedFiles[index].filename}" permanentemente?`)) return;
+                <div class="portfolio-grid">
+                    <!-- Proyecto 1 -->
+                    <article class="project-card">
+                        <div class="project-img">
+                            <img src="https://picsum.photos/seed/app1/600/400.jpg" alt="Proyecto App Finanzas">
+                        </div>
+                        <div class="project-info">
+                            <span class="project-tag">Fintech</span>
+                            <h3>App de Finanzas Personales</h3>
+                            <p>Diseño de dashboard y aplicación móvil para gestión de gastos.</p>
+                            <a href="#" class="project-link">Ver caso de estudio <i class="ph ph-arrow-right"></i></a>
+                        </div>
+                    </article>
 
-            const file = loadedFiles[index];
-            if (map.hasLayer(file.clusterGroup)) map.removeLayer(file.clusterGroup);
-            if (map.hasLayer(file.individualLayer)) map.removeLayer(file.individualLayer);
+                    <!-- Proyecto 2 -->
+                    <article class="project-card">
+                        <div class="project-img">
+                            <img src="https://picsum.photos/seed/arch/600/400.jpg" alt="Proyecto Arquitectura">
+                        </div>
+                        <div class="project-info">
+                            <span class="project-tag">Arquitectura</span>
+                            <h3>Studio Modern</h3>
+                            <p>Sitio web corporativo minimalista para una firma de arquitectos.</p>
+                            <a href="#" class="project-link">Ver caso de estudio <i class="ph ph-arrow-right"></i></a>
+                        </div>
+                    </article>
 
-            loadedFiles.splice(index, 1);
-            actualizarDistritos();
-            aplicarFiltros();
-            actualizarBotonesAnalisis();
-            abrirGestionArchivos();
-        }
+                    <!-- Proyecto 3 -->
+                    <article class="project-card">
+                        <div class="project-img">
+                            <img src="https://picsum.photos/seed/food/600/400.jpg" alt="Proyecto Restaurante">
+                        </div>
+                        <div class="project-info">
+                            <span class="project-tag">E-commerce</span>
+                            <h3>Delivery Gourmet</h3>
+                            <p>Tienda online con sistema de pedidos y pasarela de pagos.</p>
+                            <a href="#" class="project-link">Ver caso de estudio <i class="ph ph-arrow-right"></i></a>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
 
-        function aplicarGestionArchivos() {
-            document.querySelectorAll('.file-vis').forEach(cb => {
-                const idx = parseInt(cb.dataset.index);
-                loadedFiles[idx].visible = cb.checked;
-                loadedFiles[idx].selectedForAnalysis = cb.checked;
-            });
+        <!-- Contact Section -->
+        <section id="contact" class="section-padding contact">
+            <div class="container">
+                <div class="contact-container">
+                    <!-- Información de Contacto -->
+                    <div class="contact-info">
+                        <h3>¡Hablemos de tu proyecto!</h3>
+                        <p>Estoy disponible para trabajos freelance y colaboraciones. Envíame un mensaje y construyamos algo increíble juntos.</p>
+                        
+                        <div class="info-item">
+                            <i class="ph ph-envelope-simple"></i>
+                            <div>
+                                <small>Email</small>
+                                <div style="font-weight: 600;">hola@devstudio.com</div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="ph ph-phone"></i>
+                            <div>
+                                <small>Teléfono</small>
+                                <div style="font-weight: 600;">+34 123 456 789</div>
+                            </div>
+                        </div>
 
-            aplicarFiltros();
-            actualizarBotonesAnalisis();
-            cerrarModal('gestionArchivosModal');
-        }
+                        <div class="info-item">
+                            <i class="ph ph-map-pin"></i>
+                            <div>
+                                <small>Ubicación</small>
+                                <div style="font-weight: 600;">Madrid, España</div>
+                            </div>
+                        </div>
+                    </div>
 
-        function ejecutarConteo() {
-            actualizarConteos();
-            document.getElementById('conteoModal').style.display = 'flex';
-        }
+                    <!-- Formulario -->
+                    <div class="contact-form-wrapper">
+                        <form action="#" method="POST" onsubmit="event.preventDefault(); alert('Gracias por tu mensaje. Esto es una demostración estática.');">
+                            <div class="form-group">
+                                <label for="name" class="form-label">Nombre Completo</label>
+                                <input type="text" id="name" class="form-control" placeholder="Ej: Juan Pérez" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email" class="form-label">Correo Electrónico</label>
+                                <input type="email" id="email" class="form-control" placeholder="juan@ejemplo.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="message" class="form-label">Mensaje</label>
+                                <textarea id="message" rows="4" class="form-control" placeholder="Cuéntame sobre tu proyecto..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                                Enviar Mensaje <i class="ph ph-paper-plane-right"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
 
-        function ejecutarReporte() {
-            const datos = [];
-            loadedFiles.forEach(file => {
-                if (file.visible && file.selectedForAnalysis) {
-                    datos.push(...file.data);
-                }
-            });
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <a href="#" class="footer-logo">DevStudio</a>
+            <div class="social-links">
+                <a href="#" aria-label="Instagram"><i class="ph ph-instagram-logo"></i></a>
+                <a href="#" aria-label="Twitter"><i class="ph ph-twitter-logo"></i></a>
+                <a href="#" aria-label="LinkedIn"><i class="ph ph-linkedin-logo"></i></a>
+                <a href="#" aria-label="Github"><i class="ph ph-github-logo"></i></a>
+            </div>
+            <p>&copy; 2023 DevStudio. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 
-            if (datos.length === 0) {
-                alert('No hay archivos seleccionados para análisis.');
-                return;
-            }
+    <!-- JavaScript Mínimo para Menú Móvil -->
+    <script>
+        const menuBtn = document.querySelector('.mobile-menu-btn');
+        const navLinks = document.querySelector('.nav-links');
+        const links = document.querySelectorAll('.nav-links a');
 
-            const porDistrito = {};
-            const totales = { A1:0, A2:0, A3:0, IMPOSIBILIDAD:0, PROYECTO:0, VERENCAMPO:0, total:0 };
-
-            datos.forEach(row => {
-                const distrito = row.DISTRITO || 'SIN DISTRITO';
-                if (!porDistrito[distrito]) porDistrito[distrito] = { A1:0, A2:0, A3:0, IMPOSIBILIDAD:0, PROYECTO:0, VERENCAMPO:0, total:0 };
-
-                const textoCampo = [
-                    row['VER EN CAMPO'],
-                    row['VER_EN_CAMPO'],
-                    row['VERENCAMPO'],
-                    row.ACTIVIDAD,
-                    row.OBSERVACION
-                ].filter(Boolean).join(' ').toLowerCase();
-
-                const esVerEnCampo = tienePalabraCampo(textoCampo);
-
-                let tipo = 'PROYECTO';
-                const act = (row.ACTIVIDAD || '').toString().trim().toUpperCase();
-                
-                if (esVerEnCampo) {
-                    tipo = 'VERENCAMPO';
-                } else if (act === 'A1') {
-                    tipo = 'A1';
-                } else if (act === 'A2') {
-                    tipo = 'A2';
-                } else if (act === 'A3') {
-                    tipo = 'A3';
-                } else if (act === 'IMPOSIBILIDAD') {
-                    tipo = 'IMPOSIBILIDAD';
-                }
-
-                porDistrito[distrito][tipo]++;
-                porDistrito[distrito].total++;
-                totales[tipo]++;
-                totales.total++;
-            });
-
-            let html = '<table style="width:100%; border-collapse:collapse;"><tr><th>Distrito</th><th>A1</th><th>A2</th><th>A3</th><th>Impos.</th><th>Proy.</th><th>Ver Campo</th><th>Total</th></tr>';
-            Object.keys(porDistrito).sort().forEach(dist => {
-                const d = porDistrito[dist];
-                html += `<tr><td>${dist}</td><td>${d.A1}</td><td>${d.A2}</td><td>${d.A3}</td><td>${d.IMPOSIBILIDAD}</td><td>${d.PROYECTO}</td><td>${d.VERENCAMPO}</td><td>${d.total}</td></tr>`;
-            });
-            html += `<tr style="font-weight:bold; background:#f0f0f0;"><td><strong>TOTAL GENERAL</strong></td><td><strong>${totales.A1}</strong></td><td><strong>${totales.A2}</strong></td><td><strong>${totales.A3}</strong></td><td><strong>${totales.IMPOSIBILIDAD}</strong></td><td><strong>${totales.PROYECTO}</strong></td><td><strong>${totales.VERENCAMPO}</strong></td><td><strong>${totales.total}</strong></td></tr></table>`;
-
-            document.getElementById('reporteContenido').innerHTML = html;
-            document.getElementById('reporteModal').style.display = 'flex';
-        }
-
-        function exportarSeleccionPDF() {
-            if (selectedMarkers.length === 0) {
-                alert("No hay puntos seleccionados.");
-                return;
-            }
-
-            const doc = new jsPDF('p', 'mm', 'a4');
-            doc.setFontSize(16);
-            doc.text("Reporte de Puntos Seleccionados - Agua Potable", 20, 20);
-            doc.setFontSize(12);
-            doc.text(`Total: ${selectedMarkers.length} puntos | Fecha: ${new Date().toLocaleDateString('es-PE')}`, 20, 30);
-
-            const headers = [["N°", "SUMINISTRO", "Tipo", "Medidor", "Dirección", "Distrito"]];
-            const data = selectedMarkers.map((p, i) => [
-                i + 1,
-                p.SUMINISTRO || p['SUMINISTRO'] || p['N° SUMINISTRO'] || p['COD SUMINISTRO'] || 'SIN SUMINISTRO',
-                p.tipoFiltro || '—',
-                p.MEDIDOR || 'SIN',
-                p.DIRECCION || '',
-                p.DISTRITO || ''
-            ]);
-
-            doc.autoTable({
-                head: headers,
-                body: data,
-                startY: 40,
-                theme: 'grid',
-                headStyles: { fillColor: [29, 78, 216] },
-                columnStyles: {
-                    0: { cellWidth: 10 },
-                    1: { cellWidth: 40 },
-                    2: { cellWidth: 20 },
-                    3: { cellWidth: 40 },
-                    4: { cellWidth: 60 },
-                    5: { cellWidth: 30 }
-                }
-            });
-
-            doc.save("reporte_seleccionados_sin_ubicacion.pdf");
-        }
-
-        function exportarSeleccionExcel() {
-            if (selectedMarkers.length === 0) {
-                alert("No hay puntos seleccionados.");
-                return;
-            }
-
-            const data = selectedMarkers.map(p => ({
-                SUMINISTRO: p.SUMINISTRO || p['SUMINISTRO'] || p['N° SUMINISTRO'] || p['COD SUMINISTRO'] || 'SIN SUMINISTRO',
-                Tipo: p.tipoFiltro || '—',
-                Medidor: p.MEDIDOR || 'SIN MEDIDOR',
-                Direccion: p.DIRECCION || '',
-                Distrito: p.DISTRITO || '',
-                Actividad: p.ACTIVIDAD || 'SIN DATO',
-                Usuario: p.Usuario || '—'
-            }));
-
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Seleccionados");
-            XLSX.writeFile(wb, "reporte_seleccionados_sin_ubicacion.xlsx");
-        }
-
-        function aplicarFiltros() {
-            loadedFiles.forEach(file => {
-                if (map.hasLayer(file.clusterGroup)) map.removeLayer(file.clusterGroup);
-                if (map.hasLayer(file.individualLayer)) map.removeLayer(file.individualLayer);
-                file.clusterGroup.clearLayers();
-                file.individualLayer.clearLayers();
-
-                if (!file.visible) return;
-
-                const distrito = document.getElementById('distritoFilter').value;
-
-                file.markers.forEach(m => {
-                    if (distrito !== '' && distrito !== 'TODOS' && m.properties.DISTRITO !== distrito) return;
-                    if (!visibilidad[m.properties.tipoFiltro]) return;
-
-                    const marker = crearMarcador(m.getLatLng().lat, m.getLatLng().lng, m.properties.color);
-                    marker.properties = m.properties;
-
-                    marker.on('click', function(e) {
-                        if (modoClic) {
-                            toggleSeleccionMarker(this);
-                        } else {
-                            resaltarMarcador(this);
-                            mostrarInfoPanel(this.properties);
-                            currentSelectedMarker = this;
-                        }
-                    });
-
-                    file.clusterGroup.addLayer(marker);
-                    file.individualLayer.addLayer(marker);
-                });
-            });
-            controlarVistaPorZoom();
-        }
-
-        function controlarVistaPorZoom() {
-            const zoom = map.getZoom();
-            loadedFiles.forEach(file => {
-                if (!file.visible) return;
-                if (zoom >= 16) {
-                    map.removeLayer(file.clusterGroup);
-                    map.addLayer(file.individualLayer);
-                } else {
-                    map.removeLayer(file.individualLayer);
-                    map.addLayer(file.clusterGroup);
-                }
-            });
-        }
-
-        function toggleModoClic() {
-            modoClic = !modoClic;
-            map.getContainer().style.cursor = modoClic ? 'crosshair' : 'grab';
-            document.getElementById('btnSeleccionar').classList.toggle('active', modoClic);
-            if (modoClic) {
-                alert("Modo selección activado. Haz clic en los puntos para seleccionarlos.");
-                cerrarPanelInfo();
-            }
-            aplicarFiltros();
-        }
-
-        function toggleSeleccionMarker(marker) {
-            const props = marker.properties;
-            const key = props.ID || props.SUMINISTRO || `${props.LATITUD || 'lat'}_${props.LONGITUD || 'lng'}`;
+        // Toggle menú
+        menuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
             
-            const index = selectedMarkers.findIndex(s => {
-                const sKey = s.ID || s.SUMINISTRO || `${s.LATITUD || 'lat'}_${s.LONGITUD || 'lng'}`;
-                return sKey === key;
-            });
-
-            if (index === -1) {
-                selectedMarkers.push(props);
-                
-                if (!marker.options.originalStyle) {
-                    marker.options.originalStyle = { ...marker.options };
-                }
-                
-                marker.setStyle({
-                    fillColor: '#22c55e',
-                    color: '#14532d',
-                    weight: 6,
-                    radius: 12,
-                    className: 'resaltado-clic'
-                });
+            // Cambiar icono de menú
+            const icon = menuBtn.querySelector('i');
+            if(navLinks.classList.contains('active')) {
+                icon.classList.replace('ph-list', 'ph-x');
             } else {
-                selectedMarkers.splice(index, 1);
-                
-                if (marker.options.originalStyle) {
-                    marker.setStyle(marker.options.originalStyle);
-                } else {
-                    marker.setStyle({
-                        fillColor: props.color || '#888',
-                        color: '#000',
-                        weight: 1,
-                        radius: 6,
-                        className: ''
-                    });
-                }
+                icon.classList.replace('ph-x', 'ph-list');
             }
-            
-            actualizarConteos();
-        }
+        });
 
-        function limpiarSeleccion() {
-            selectedMarkers = [];
-            
-            loadedFiles.forEach(file => {
-                if (!file.visible) return;
-                file.clusterGroup.eachLayer(marker => {
-                    if (marker.options.originalStyle) {
-                        marker.setStyle(marker.options.originalStyle);
-                    } else {
-                        marker.setStyle({
-                            fillColor: marker.properties.color,
-                            color: '#000',
-                            weight: 1,
-                            radius: 6,
-                            className: ''
-                        });
-                    }
-                });
+        // Cerrar menú al hacer click en un enlace
+        links.forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+                menuBtn.querySelector('i').classList.replace('ph-x', 'ph-list');
             });
-            
-            aplicarFiltros();
-            actualizarConteos();
-        }
-
-        function abrirFiltroVisibilidad() {
-            document.getElementById('visA1').checked = visibilidad.A1;
-            document.getElementById('visA2').checked = visibilidad.A2;
-            document.getElementById('visA3').checked = visibilidad.A3;
-            document.getElementById('visIMP').checked = visibilidad.IMPOSIBILIDAD;
-            document.getElementById('visProyecto').checked = visibilidad.PROYECTO;
-            document.getElementById('visVERENCAMPO').checked = visibilidad.VERENCAMPO;
-            document.getElementById('filtroModal').style.display = 'flex';
-        }
-
-        function aplicarFiltroVisibilidad() {
-            visibilidad.A1 = document.getElementById('visA1').checked;
-            visibilidad.A2 = document.getElementById('visA2').checked;
-            visibilidad.A3 = document.getElementById('visA3').checked;
-            visibilidad.IMPOSIBILIDAD = document.getElementById('visIMP').checked;
-            visibilidad.PROYECTO = document.getElementById('visProyecto').checked;
-            visibilidad.VERENCAMPO = document.getElementById('visVERENCAMPO').checked;
-            cerrarModal('filtroModal');
-            aplicarFiltros();
-        }
-
-        function cerrarModal(id) {
-            document.getElementById(id).style.display = 'none';
-        }
-
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
-        };
-
-        map.on('zoomend', controlarVistaPorZoom);
-        document.getElementById('distritoFilter').addEventListener('change', aplicarFiltros);
-
-        function actualizarConteos() {
-            const markers = getSelectedVisibleMarkers();
-            const c = { A1:0, A2:0, A3:0, IMPOSIBILIDAD:0, PROYECTO:0, VERENCAMPO:0, total: markers.length };
-            markers.forEach(m => {
-                if (c.hasOwnProperty(m.properties.tipoFiltro)) c[m.properties.tipoFiltro]++;
-            });
-            document.getElementById('modalCountA1').textContent = c.A1;
-            document.getElementById('modalCountA2').textContent = c.A2;
-            document.getElementById('modalCountA3').textContent = c.A3;
-            document.getElementById('modalCountIMP').textContent = c.IMPOSIBILIDAD;
-            document.getElementById('modalCountPROY').textContent = c.PROYECTO;
-            document.getElementById('modalCountVERCAMPO').textContent = c.VERENCAMPO;
-            document.getElementById('modalCountTotal').textContent = c.total;
-            document.getElementById('modalSelectionCount').textContent = selectedMarkers.length;
-        }
-
-        function getSelectedVisibleMarkers() {
-            let markers = [];
-            loadedFiles.forEach(file => {
-                if (file.visible && file.selectedForAnalysis) markers = markers.concat(file.markers);
-            });
-            return markers;
-        }
-
+        });
     </script>
 </body>
 </html>
