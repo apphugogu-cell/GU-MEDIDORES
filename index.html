@@ -589,7 +589,7 @@
             document.getElementById('excelFile').click();
         });
 
-        // CARGA AUTOMÁTICA DE data.json DESDE TU GITHUB
+        // CARGA AUTOMÁTICA DE data.json DESDE TU GITHUB (ya con el nombre correcto)
         async function cargarMatrizJsonDesdeGitHub() {
             const urlJson = "https://raw.githubusercontent.com/apphugogu-cell/GU-MEDIDORES/main/data.json";
 
@@ -618,7 +618,7 @@
                 alert(`¡Matriz data.json cargada automáticamente!\n${cargados} suministros con coordenadas válidas.`);
             } catch (err) {
                 console.error(err);
-                alert(`No se pudo cargar data.json.\n\nVerifica:\n1. El archivo está en la raíz del repositorio\n2. Se llama exactamente "data.json"\n3. El repositorio es público\n\nPuedes cargar manualmente con el botón.`);
+                alert(`No se pudo cargar data.json.\n\nVerifica:\n1. El archivo está en la raíz del repositorio\n2. Se llama exactamente "data.json" (con punto)\n3. El repositorio es público\n\nPuedes cargar manualmente con el botón.`);
                 document.getElementById('excelFile').click();
             }
         }
@@ -733,6 +733,7 @@
             e.target.value = '';
         });
 
+        // Resto de funciones (mantén las que ya tenías o copia las del código anterior si las borraste)
         function actualizarDistritos() {
             const allDistritos = new Set();
             loadedFiles.forEach(file => {
