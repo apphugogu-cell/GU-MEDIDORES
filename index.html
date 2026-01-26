@@ -617,7 +617,7 @@
                 alert(`¡Matriz data.json cargada automáticamente!\n${cargados} suministros con coordenadas válidas.`);
             } catch (err) {
                 console.error(err);
-                alert(`No se pudo cargar data.json.\n\nVerifica:\n1. El archivo está en la raíz del repositorio\n2. Se llama exactamente "data.json"\n3. El repositorio es público\n\nPuedes cargar manualmente con el botón.`);
+                alert(`No se pudo cargar data.json.\n\nVerifica:\n1. El archivo está en la raíz del repositorio\n2. Se llama exactamente "data.json" (con punto)\n3. El repositorio es público\n\nPuedes cargar manualmente con el botón.`);
                 document.getElementById('excelFile').click();
             }
         }
