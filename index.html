@@ -255,6 +255,31 @@
             transition: all 0.2s ease;
         }
 
+        .user-location-icon {
+            background: none !important;
+            border: none !important;
+        }
+
+        #search-container {
+            position: relative;
+            margin: 10px 0;
+        }
+
+        #search-box {
+            padding-right: 40px !important;
+        }
+
+        #search-clear {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            cursor: pointer;
+            font-size: 20px;
+            display: none;
+        }
+
         @media print {
             #leyenda, .leaflet-control-container, .leaflet-sidebar, .legend-toggle, #info-panel, 
             .modal, button, select, input, .leaflet-top, .leaflet-bottom { display: none !important; }
@@ -328,7 +353,10 @@
                 
                 <hr style="border-color:#bfdbfe; margin:20px 0;">
                 
-                <input type="text" id="search-box" placeholder="Buscar SUMINISTRO / Dir / Medidor">
+                <div id="search-container">
+                    <input type="text" id="search-box" placeholder="Buscar SUMINISTRO / Dir / Medidor">
+                    <span id="search-clear">×</span>
+                </div>
                 
                 <hr style="border-color:#bfdbfe; margin:20px 0;">
                 
@@ -591,13 +619,17 @@
             currentSelectedMarker = null;
         }
 
+        // ────────────────────────────────────────────────
+        // CONTROL DE UBICACIÓN (geolocalización)
+        // ────────────────────────────────────────────────
         L.Control.UbicacionButton = L.Control.extend({
             options: { position: 'topright' },
+
             onAdd: function(map) {
                 const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
                 this.button = L.DomUtil.create('a', '', container);
                 this.button.href = '#';
-                this.button.title = 'Mi ubicación en tiempo real';
+                this.button.title = 'Centrar en mi ubicación actual';
                 this.button.innerHTML = '<i class="fa fa-location-arrow" style="font-size:18px; line-height:26px;"></i>';
                 this.button.style.width = '34px';
                 this.button.style.height = '34px';
@@ -606,10 +638,68 @@
                 this.button.style.backgroundColor = '#ffffff';
                 this.button.style.borderBottom = '1px solid #ccc';
 
-                L.DomEvent
-                    .on(this.button, 'mousedown', L.DomEvent.stopPropagation)
-                    .on(this.button, 'click', L.DomEvent.preventDefault)
-                    .on(this.button, 'click', () => {});
+                L.DomEvent.disableClickPropagation(container);
+
+                L.DomEvent.on(this.button, 'click', L.DomEvent.stopPropagation);
+                L.DomEvent.on(this.button, 'click', L.DomEvent.preventDefault);
+                
+                L.DomEvent.on(this.button, 'click', () => {
+                    this.button.classList.add('location-control-active');
+
+                    if (!navigator.geolocation) {
+                        alert("La geolocalización no está soportada en este navegador.");
+                        this.button.classList.remove('location-control-active');
+                        return;
+                    }
+
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            const accuracy = position.coords.accuracy;
+
+                            map.setView([lat, lng], 17);
+
+                            if (this._accuracyCircle) map.removeLayer(this._accuracyCircle);
+                            this._accuracyCircle = L.circle([lat, lng], {
+                                radius: accuracy,
+                                color: '#136aec',
+                                fillColor: '#136aec',
+                                fillOpacity: 0.15,
+                                weight: 2
+                            }).addTo(map);
+
+                            if (this._userMarker) map.removeLayer(this._userMarker);
+                            this._userMarker = L.marker([lat, lng], {
+                                icon: L.divIcon({
+                                    className: 'user-location-icon',
+                                    html: '<i class="fa fa-user-circle" style="font-size:24px;color:#c62828;"></i>',
+                                    iconSize: [32, 32],
+                                    iconAnchor: [16, 16]
+                                })
+                            }).addTo(map).bindPopup("Tu ubicación aproximada<br>Precisión: ±" + Math.round(accuracy) + " m");
+
+                            setTimeout(() => {
+                                this.button.classList.remove('location-control-active');
+                            }, 2000);
+                        },
+                        (error) => {
+                            let mensaje = "No se pudo obtener tu ubicación.";
+                            switch(error.code) {
+                                case error.PERMISSION_DENIED: mensaje = "Permiso de ubicación denegado.\nActiva la ubicación en tu navegador."; break;
+                                case error.POSITION_UNAVAILABLE: mensaje = "Información de ubicación no disponible."; break;
+                                case error.TIMEOUT: mensaje = "La solicitud tardó demasiado."; break;
+                            }
+                            alert(mensaje);
+                            this.button.classList.remove('location-control-active');
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        }
+                    );
+                });
 
                 return container;
             }
@@ -659,7 +749,7 @@
                 alert(`¡Matriz data.json cargada automáticamente!\n${cargados} suministros con coordenadas válidas.`);
             } catch (err) {
                 console.error(err);
-                alert(`No se pudo cargar data.json.\n\nVerifica:\n1. El archivo está en la raíz del repositorio\n2. Se llama exactamente "data.json" (con punto)\n3. El repositorio es público\n\nPuedes cargar manualmente con el botón.`);
+                alert(`No se pudo cargar data.json.\n\nPuedes cargar manualmente con el botón.`);
                 document.getElementById('excelFile').click();
             }
         }
@@ -1453,7 +1543,6 @@
                     const color = getClusterColor(Number(gid));
                     const cantidad = ultimoAgrupamiento.groups[gid].length;
 
-                    // Fila de encabezado del grupo
                     data.push({
                         GRUPO: Number(gid) + 1,
                         Color: color,
@@ -1461,7 +1550,6 @@
                         Suministro: ''  
                     });
 
-                    // Filas con cada suministro debajo
                     ultimoAgrupamiento.groups[gid]
                         .sort()
                         .forEach(suministro => {
@@ -1477,10 +1565,10 @@
             const ws = XLSX.utils.json_to_sheet(data, {header: ["GRUPO", "Color", "Cantidad", "Suministro"]});
 
             ws['!cols'] = [
-                { wch: 8 },   // GRUPO
-                { wch: 10 },  // Color
-                { wch: 10 },  // Cantidad
-                { wch: 18 }   // Suministro
+                { wch: 8 },
+                { wch: 10 },
+                { wch: 10 },
+                { wch: 18 }
             ];
 
             const range = XLSX.utils.decode_range(ws['!ref']);
@@ -1568,6 +1656,95 @@
                 if (header) header.remove();
             }, 1200);
         }
+
+        // ────────────────────────────────────────────────
+        // BUSCADOR FUNCIONAL
+        // ────────────────────────────────────────────────
+        document.getElementById('search-box').addEventListener('input', function(e) {
+            const term = (e.target.value || '').trim().toUpperCase();
+            document.getElementById('search-clear').style.display = term ? 'block' : 'none';
+
+            if (term === '') {
+                aplicarFiltros();
+                return;
+            }
+
+            loadedFiles.forEach(file => {
+                if (!file.visible) return;
+                if (map.hasLayer(file.clusterGroup)) map.removeLayer(file.clusterGroup);
+                if (map.hasLayer(file.individualLayer)) map.removeLayer(file.individualLayer);
+                file.clusterGroup.clearLayers();
+                file.individualLayer.clearLayers();
+            });
+
+            let encontrados = 0;
+            let boundsArray = [];
+
+            loadedFiles.forEach(file => {
+                if (!file.visible) return;
+
+                file.markers.forEach(originalMarker => {
+                    const props = originalMarker.properties;
+                    
+                    const campos = [
+                        props.SUMINISTRO,
+                        props['N° SUMINISTRO'],
+                        props['COD SUMINISTRO'],
+                        props.MEDIDOR,
+                        props.DIRECCION,
+                        props.DISTRITO,
+                        props.Usuario,
+                        props.ACTIVIDAD,
+                        props.OBSERVACION,
+                        props.NOTAS
+                    ].filter(Boolean).join(' | ').toUpperCase();
+
+                    if (campos.includes(term)) {
+                        const latlng = originalMarker.getLatLng();
+                        const color = props.color || getColor(props.tipoFiltro);
+                        
+                        const marker = crearMarcador(latlng.lat, latlng.lng, color);
+                        marker.properties = props;
+
+                        marker.on('click', function() {
+                            if (modoClic) {
+                                toggleSeleccionMarker(this);
+                            } else {
+                                resaltarMarcador(this);
+                                mostrarInfoPanel(this.properties);
+                                currentSelectedMarker = this;
+                            }
+                        });
+
+                        file.clusterGroup.addLayer(marker);
+                        file.individualLayer.addLayer(marker);
+                        encontrados++;
+                        boundsArray.push(latlng);
+                    }
+                });
+            });
+
+            controlarVistaPorZoom();
+
+            if (encontrados === 0) {
+                this.style.backgroundColor = '#ffebee';
+                setTimeout(() => this.style.backgroundColor = 'white', 1200);
+            } else {
+                this.style.backgroundColor = '#e8f5e9';
+                setTimeout(() => this.style.backgroundColor = 'white', 1200);
+
+                if (encontrados <= 15 && boundsArray.length > 0) {
+                    const bounds = L.latLngBounds(boundsArray);
+                    map.fitBounds(bounds.pad(0.25), { maxZoom: 17 });
+                }
+            }
+        });
+
+        document.getElementById('search-clear').addEventListener('click', () => {
+            document.getElementById('search-box').value = '';
+            document.getElementById('search-clear').style.display = 'none';
+            aplicarFiltros();
+        });
 
     </script>
 </body>
