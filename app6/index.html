@@ -1,1348 +1,723 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PT-GURALMO - Panel Fotográfico Profesional</title>
-    
-    <!-- Dependencias vía CDN -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G-URALMO | PF2 2025</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;900&family=JetBrains+Mono:wght@400;500;800&display=swap');
+  <style>
+    :root {
+      --primario:#0B2B5A; --secundario:#E63946; --acento:#FFD60A; --gris:#f8f9fc; --sombra:0 15px 40px rgba(11,43,90,0.18);
+      --color-borde-a4:#0066cc; --color-fondo-a4:white; --color-titulo-linea:#0066cc; --grosor-borde-a4:6px; --grosor-linea-titulo:6px;
+      --fondo-imagen-a4:none; --opacidad-fondo-imagen:0.15; --color-membrete-bg:#003366; --color-membrete-texto:white;
+      --color-info-bg:#f8fbff; --color-info-texto:#003366; --color-pie-bg-start:#99ccff; --color-pie-bg-end:#66b3ff; --color-pie-texto:#003366;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Roboto',sans-serif; background:linear-gradient(135deg,#e6f0ff 0%,#d0e2ff 100%); color:#2d3436; }
+    .header-pro { background:linear-gradient(135deg,var(--primario),#0f3d7e); color:white; padding:5px 50px; display:flex; align-items:center; justify-content:space-between; box-shadow:var(--sombra); position:relative; overflow:hidden; }
+    .header-pro::before { content:''; position:absolute; inset:0; background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon fill="rgba(255,255,255,0.05)" points="0,100 100,0 100,100"/></svg>'); background-size:cover; }
+    .logo-mascota { width:120px; height:120px; border-radius:50%; border:8px solid var(--acento); box-shadow:0 15px 40px rgba(0,0,0,0.5); z-index:2; }
+    .titulo-central h1 { font-family:'Montserrat',sans-serif; font-size:3rem; font-weight:900; letter-spacing:4px; text-transform:uppercase; text-shadow:0 6px 15px rgba(0,0,0,0.4); }
+    .titulo-central .subtitle { font-size:1.5rem; opacity:0.95; }
+    .cui-badge { background:var(--acento); color:var(--primario); padding:1px 35px; border-radius:50px; font-weight:900; font-size:1rem; letter-spacing:2px; box-shadow:0 8px 25px rgba(0,0,0,0.3); z-index:2; }
+    .toolbar-pro { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:4px; padding:8px 8px; background:var(--gris); }
+    .tool-card { background:white; padding:6px 6px; border-radius:24px; box-shadow:var(--sombra); border:1px solid #dfe6f0; transition:0.3s; }
+    .tool-card:hover { transform:translateY(-10px); }
+    .card-title { font-family:'Montserrat',sans-serif; font-size:.8rem; font-weight:800; color:var(--primario); text-align:center; margin-bottom:2px; text-transform:uppercase; letter-spacing:1px; position:relative; }
+    .card-title::after { content:''; width:80px; height:6px; background:var(--secundario); border-radius:3px; display:block; margin:2px auto 0; }
+    .btn-pro { width:100%; padding:5px; margin:3px 0; border:none; border-radius:16px; font-family:'Montserrat',sans-serif; font-size:.7rem; font-weight:700; color:white; cursor:pointer; text-transform:uppercase; letter-spacing:.75px; transition:0.3s; box-shadow:0 8px 20px rgba(0,0,0,0.2); position:relative; overflow:hidden; }
+    .btn-pro:hover { transform:translateY(-5px); box-shadow:0 15px 35px rgba(0,0,0,0.3); }
+    .btn-azul { background:linear-gradient(135deg,var(--primario),#0f5bb5); }
+    .btn-rojo { background:linear-gradient(135deg,var(--secundario),#c1121f); }
+    .btn-ver42 { background:linear-gradient(135deg,#27ae60,#1e8449); }
+    .btn-amarillo { background:linear-gradient(135deg,var(--acento),#e6b800); color:var(--primario); }
+    .btn-pro.activo { background:linear-gradient(135deg,#ffd60a,var(--acento)); color:var(--primario); }
+    .contador-pro { text-align:center; font-size:0.8rem; font-weight:900; color:var(--primario); padding:10px; background:white; margin:0 70px 50px; border-radius:24px; border-top:12px solid var(--secundario); box-shadow:var(--sombra); }
 
-        :root {
-            --bg-app: #f1f5f9;
-            --ink: #0f172a;
-            --line: #cbd5e1;
-            --accent: #ea580c;
-        }
+    /* Vista previa: 2 hojas al lado */
+    #paneles {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 50px;
+      padding: 30px;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+    @media (max-width: 1450px) {
+      #paneles { grid-template-columns: 1fr; gap: 40px; }
+    }
 
-        body {
-            background-color: var(--bg-app);
-            color: var(--ink);
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            -webkit-font-smoothing: antialiased;
-        }
+    .a4 {
+      width:210mm;
+      min-height:297mm;
+      background:var(--color-fondo-a4);
+      padding:14mm 12mm 10mm 12mm;
+      border:var(--grosor-borde-a4) solid var(--color-borde-a4);
+      box-shadow:0 0 40px rgba(0,50,100,.3);
+      page-break-after:always;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      position:relative;
+      break-inside: avoid;
+    }
+    .a4::before { content:''; position:absolute; inset:0; background:var(--fondo-imagen-a4); background-size:cover; background-position:center; opacity:var(--opacidad-fondo-imagen); pointer-events:none; z-index:0; }
+    .a4 > * { position:relative; z-index:1; }
+    .a4 h1 { font-size:19pt; text-align:center; margin:0 0 8mm; padding-bottom:6mm; border-bottom:var(--grosor-linea-titulo) double var(--color-titulo-linea); font-weight:900; color:#003366; flex-shrink:0; }
+    .membrete, .info-bloque { width:186mm; margin:0 auto 1.5mm; padding:2px; border-radius:10px; text-align:center; font-weight:bold; flex-shrink:0; }
+    .membrete { background:var(--color-membrete-bg); color:var(--color-membrete-texto); border:3px solid var(--color-borde-a4); font-size:10.5pt; line-height:1.4; }
+    .info-bloque { background:var(--color-info-bg); color:var(--color-info-texto); border:3px solid var(--color-borde-a4); font-size:10.8pt; line-height:1.5; box-shadow:0 4px 15px rgba(0,100,200,.2); }
 
-        #loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: #0f172a;
-            color: white;
-            z-index: 9999;
-            font-family: 'JetBrains Mono', monospace;
-        }
+    /* 4 fotos por hoja en cuadrícula 2x2 */
+    .fotos {
+      flex:1;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 6mm;
+      padding-top: 4mm;
+    }
+    .foto {
+      position: relative;
+      border: 6px solid var(--color-borde-a4);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      background: white;
+    }
+    .foto-contenedor {
+      width: 100%;
+      height: calc(100% - 48px);
+      overflow: hidden;
+      position: relative;
+      background: white;
+    }
+    .foto-img {
+      max-width: none;
+      max-height: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%,-50%);
+      user-select: none;
+      pointer-events: none;
+    }
+    .pie {
+      background: linear-gradient(135deg, var(--color-pie-bg-start), var(--color-pie-bg-end));
+      border-top: 4px solid var(--color-borde-a4);
+      height: 48px;
+      padding: 0 12px;
+      font-weight: 900;
+      font-size: 9pt;
+      color: var(--color-pie-texto);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
 
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255,255,255,0.1);
-            border-left-color: #ea580c;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-        }
+    .acciones { position:absolute; top:8px; right:8px; display:flex; gap:8px; opacity:0; transition:0.3s; z-index:10; }
+    .foto:hover .acciones { opacity:1; }
+    .acciones button { width:38px; height:38px; border:none; border-radius:50%; color:white; font-size:18px; cursor:pointer; box-shadow:0 4px 12px #0006; }
+    .eliminar { background:#e74c3c; } .rotar-izq { background:#f39c12; } .rotar-der { background:#3498db; } .reset { background:#9b59b6; }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+    #contextMenu { position:absolute; background:white; border:3px solid #0066cc; border-radius:12px; box-shadow:0 10px 30px #0004; z-index:100000; padding:8px 0; display:none; min-width:340px; font-weight:bold; }
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,50,100,.97); z-index:10000; justify-content:center; align-items:center; backdrop-filter:blur(5px); }
+    .modal-content { background:white; padding:40px; border-radius:20px; max-width:900px; width:90%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px #0005; }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    th, td { border:1px solid #0066cc; padding:12px; text-align:center; }
+    th { background:var(--primario); color:white; font-weight:900; }
+    .btn-descargar-pdf { background:linear-gradient(135deg,#c1121f,#e63946); font-size:1.1rem; padding:12px 0; margin-top:25px; width:100%; border-radius:16px; box-shadow:0 8px 25px rgba(0,0,0,0.4); }
 
-        /* Sidebar Estilo Dashboard Técnico */
-        .sidebar-control {
-            width: 16rem;
-            background-color: #0f172a;
-            border-right: 1px solid #1e293b;
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            padding: 1.5rem 1rem;
-            overflow-y: auto;
-            z-index: 40;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 10px 0 30px rgba(0,0,0,0.2);
-        }
-
-        .sidebar-section {
-            padding: 1.25rem 0;
-            border-bottom: 1px solid #1e293b;
-        }
-
-        .sidebar-section:last-child {
-            border-bottom: none;
-        }
-
-        .sidebar-title {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 9px;
-            text-transform: uppercase;
-            letter-spacing: 0.25em;
-            color: #64748b;
-            margin-bottom: 1rem;
-            display: block;
-            font-weight: 800;
-        }
-
-        .sidebar-button {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            font-size: 10px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            border: none;
-            cursor: pointer;
-            justify-content: center;
-        }
-
-        .sidebar-button-primary {
-            background-color: #ea580c;
-            color: white;
-            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
-        }
-
-        .sidebar-button-primary:hover {
-            background-color: #f97316;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(234, 88, 12, 0.4);
-        }
-
-        .sidebar-button-secondary {
-            background-color: #1e293b;
-            color: #cbd5e1;
-            border: 1px solid #334155;
-        }
-
-        .sidebar-button-secondary:hover {
-            background-color: #334155;
-            color: white;
-        }
-
-        .sidebar-input {
-            width: 100%;
-            background-color: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 0.5rem;
-            padding: 0.75rem;
-            font-size: 10px;
-            color: #f1f5f9;
-            outline: none;
-            transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .sidebar-input:focus {
-            border-color: #ea580c;
-            background-color: #0f172a;
-            box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.2);
-        }
-
-        .main-viewport {
-            flex: 1;
-            padding: 2rem;
-            background-color: #f1f5f9;
-            min-height: 100vh;
-            overflow-y: auto;
-            position: relative;
-            margin-left: 16rem;
-            background-image: 
-                linear-gradient(to right, rgba(15, 23, 42, 0.03) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(15, 23, 42, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
-
-        /* Hoja A4 */
-        .a4-page {
-            width: 210mm;
-            height: 297mm;
-            margin: 0 auto 3rem;
-            background: white;
-            padding: 12mm 15mm 12mm 20mm;
-            border: 1px solid #000;
-            box-sizing: border-box;
-            position: relative;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.12);
-            transition: transform 0.3s ease;
-        }
-
-        @media print {
-            .no-print { display: none !important; }
-            body, html {
-                background: white !important;
-                height: auto !important;
-                overflow: visible !important;
-            }
-            .main-viewport { 
-                margin: 0 !important;
-                padding: 0 !important;
-                background: white !important;
-                background-image: none !important;
-            }
-            .page-wrapper {
-                width: 210mm !important;
-                height: 297mm !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                transform: none !important;
-                page-break-after: always !important;
-            }
-            .a4-page {
-                margin: 0 !important;
-                border: none !important;
-                box-shadow: none !important;
-                page-break-after: avoid !important;
-                page-break-inside: avoid !important;
-                transform: none !important;
-                width: 210mm !important;
-                height: 297mm !important;
-            }
-            @page { 
-                size: A4 portrait; 
-                margin: 0; 
-            }
-        }
-
-        .sidebar-control::-webkit-scrollbar {
-            width: 4px;
-        }
-        .sidebar-control::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .sidebar-control::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 10px;
-        }
-
-        .lucide-icon svg {
-            display: block;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .photo-card {
-            border-top: 2px solid #0f172a;
-            border-bottom: 2px solid #0f172a;
-            border-right: 2px solid #0f172a;
-            border-left: 5px solid #0f172a;
-            background: white;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .photo-card:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .photo-container {
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.5rem;
-            background: white;
-            position: relative;
-        }
-
-        .photo-footer {
-            background-color: rgba(241, 245, 249, 0.5);
-            padding: 0.5rem 1rem;
-            border-top: 1px solid #0f172a;
-            min-height: 2.5rem;
-        }
-
-        .img-label {
-            font-size: 7pt;
-            font-weight: 900;
-            color: #0f172a;
-            text-transform: uppercase;
-            letter-spacing: -0.02em;
-            flex-shrink: 0;
-        }
-
-        .img-name {
-            font-size: 11pt;
-            font-style: italic;
-            color: #1e293b;
-            line-height: 1.2;
-            width: 100%;
-            outline: none;
-            cursor: text;
-        }
-
-        /* Modal de Importación */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            padding: 2rem;
-        }
-
-        .modal-content {
-            background: white;
-            width: 100%;
-            max-width: 1000px;
-            max-height: 85vh;
-            border-radius: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-header {
-            padding: 1.5rem 2rem;
-            background: #0f172a;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .modal-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 2rem;
-            background: #f8fafc;
-        }
-
-        .modal-footer {
-            padding: 1.5rem 2rem;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
-            background: white;
-        }
-
-        .import-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .import-item {
-            background: white;
-            border-radius: 0.75rem;
-            overflow: hidden;
-            border: 2px solid transparent;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .import-item.selected {
-            border-color: #ea580c;
-            box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.1);
-        }
-
-        .import-thumb {
-            width: 100%;
-            aspect-ratio: 1;
-            object-fit: cover;
-        }
-
-        /* Botones de edición precisos */
-        .edit-btn {
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: white;
-            color: #0f172a;
-            border-radius: 4px;
-            border: 1px solid #e2e8f0;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 10px;
-        }
-
-        .edit-btn:hover {
-            background: #ea580c;
-            color: white;
-            border-color: #ea580c;
-        }
-
-        .edit-btn-active {
-            background: #ea580c;
-            color: white;
-            border-color: #ea580c;
-        }
-
-        .page-wrapper {
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .report-content-layer {
-            position: relative;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-    </style>
+    @media print {
+      @page { size:A4 portrait; margin:0; }
+      body { background:white; padding:0; }
+      .header-pro,.toolbar-pro,.contador-pro,.modal,.acciones,.btn-pro,#contextMenu { display:none !important; }
+      #paneles { display:block; }
+      .a4 { margin:0 !important; padding:14mm 12mm 10mm 12mm !important; border:var(--grosor-borde-a4) solid var(--color-borde-a4) !important; box-shadow:none !important; page-break-after:always; height:297mm !important; overflow:hidden; }
+      * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+    }
+  </style>
 </head>
 <body>
-    <div id="loader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; color: white; z-index: 9999; font-family: sans-serif;">
-        <div class="spinner"></div>
-        <div style="font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;">Cargando Panel Guralmo...</div>
-        <div id="loader-msg" style="margin-top: 20px; font-size: 10px; opacity: 0.5; display: none; text-align: center;">Esto está tardando más de lo normal...<br>Verifique su conexión a internet.</div>
+
+<div class="header-pro">
+  <img src="logo.png" alt="Logo URALMO" class="logo-mascota" onerror="this.src='https://i.ibb.co/5Y2n7PZ/engineer-boy.png'">
+  <div class="titulo-central">
+    <h1>PANEL FOTOGRÁFICO</h1>
+    <div class="subtitle">GRUPO URALMO • PF2 2025</div>
+  </div>
+  <div class="cui-badge">HUGO URQUIAGA</div>
+</div>
+
+<div class="toolbar-pro">
+  <div class="tool-card">
+    <div class="card-title">Carga de Evidencias</div>
+    <label class="btn-pro btn-azul" style="display:block;text-align:center;cursor:pointer;">
+      Carpetas
+      <input type="file" id="inputCarpeta" webkitdirectory directory multiple style="display:none;">
+    </label>
+    <button class="btn-pro btn-azul" id="btnZip">Cargar ZIP</button>
+    <div id="progreso" style="margin-top:15px;font-weight:bold;color:var(--primario);text-align:center;"></div>
+    <div style="margin-top:5px;padding:10px;background:#e3f2fd;border-radius:16px;border:3px dashed var(--acento);">
+      <label class="btn-pro btn-azul" style="font-size:.7rem;padding:5px 25px;">
+        Cargar Excel
+        <input type="file" id="excelFile" accept=".xlsx,.xls" style="opacity:0;position:absolute;left:0;top:0;width:100%;height:100%;cursor:pointer;">
+      </label>
+      <div id="excelStatus" style="margin-top:10px;font-weight:600;color:var(--primario); font-size:10px;">sin archivo</div>
     </div>
-    <script>
-        setTimeout(() => {
-            const msg = document.getElementById('loader-msg');
-            if (msg) msg.style.display = 'block';
-        }, 5000);
-    </script>
-    <script>
-        // Manejador de errores global para mostrar en pantalla si falla la carga
-        window.onerror = function(msg, url, line, col, error) {
-            const loader = document.getElementById('loader');
-            if (loader) {
-                loader.innerHTML = `<div style="color: #ef4444; padding: 20px; font-family: monospace; font-size: 12px; text-align: center; max-width: 80%;">
-                    <h3 style="margin-bottom: 10px; font-weight: 900;">ERROR DE CARGA</h3>
-                    <p style="margin-bottom: 5px;">${msg}</p>
-                    <p style="opacity: 0.7;">Línea: ${line}, Col: ${col}</p>
-                    <button onclick="location.reload()" style="margin-top: 20px; background: #ea580c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em;">Reintentar</button>
-                </div>`;
+  </div>
+
+  <div class="tool-card">
+    <div class="card-title">Edición Rápida</div>
+    <button class="btn-pro btn-amarillo" id="btnNombrar">10 Descripciones Personalizadas</button>
+    <button class="btn-pro btn-amarillo" id="btnEditarMembrete">Editar Membrete</button>
+  </div>
+
+  <div class="tool-card">
+    <div class="card-title">Visibilidad</div>
+    <button class="btn-pro btn-azul activo" id="btnInfo">Información</button>
+    <button class="btn-pro btn-azul activo" id="btnMembrete">Membrete</button>
+    <button class="btn-pro btn-azul activo" id="btnCodigo">Código en Pie</button>
+    <button class="btn-pro btn-azul activo" id="btnTitulo">Título</button>
+  </div>
+
+  <div class="tool-card">
+    <div class="card-title">Proyecto</div>
+    <button class="btn-pro btn-azul" id="btnGuardar">Guardar PF</button>
+    <button class="btn-pro btn-azul" id="btnCargar">Cargar PF</button>
+  </div>
+
+  <div class="tool-card">
+    <div class="card-title">Apariencia</div>
+    <button class="btn-pro btn-amarillo" id="btnTemas">TEMAS Y COLORES</button>
+  </div>
+
+  <div class="tool-card">
+    <div class="card-title">Índice / Exportar</div>
+    <button class="btn-pro btn-ver42" id="btnGenerarIndice">Generar Índice</button>
+    <button class="btn-pro btn-azul" id="btnImprimir">PDF / Imprimir</button>
+    <button class="btn-pro btn-rojo" id="btnLimpiar">Limpiar</button>
+  </div>
+</div>
+
+<div class="contador-pro" id="contador">0 carpetas • 0 fotos • 0 hojas</div>
+<div id="paneles"></div>
+<div id="contextMenu"></div>
+
+<!-- MODAL MEMBRETE -->
+<div id="modalMembrete" class="modal">
+  <div class="modal-content">
+    <h2 style="text-align:center;color:var(--primario);margin-bottom:20px;">EDITAR MEMBRETE CORPORATIVO</h2>
+    <textarea id="membreteTextarea" style="width:100%;height:200px;padding:15px;font-size:1rem;border-radius:12px;border:2px solid var(--primario);"></textarea>
+    <div style="text-align:right;margin-top:20px;">
+      <button class="btn-pro btn-rojo" style="margin-right:10px;" onclick="document.getElementById('modalMembrete').style.display='none'">Cancelar</button>
+      <button class="btn-pro btn-azul" onclick="aplicarMembrete()">Aplicar y Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ÍNDICE CON DESCARGA PDF -->
+<div id="modalIndice" class="modal">
+  <div class="modal-content">
+    <h2 style="text-align:center;color:var(--primario);margin-bottom:20px;">ÍNDICE DE SUMINISTROS</h2>
+    <div id="contenidoIndice" style="text-align:center;color:#666;">Presiona "Generar Índice" para ver la tabla.</div>
+    <button class="btn-pro btn-descargar-pdf" id="btnDescargarPDF">Descargar Índice como PDF</button>
+    <div style="text-align:right;margin-top:20px;">
+      <button class="btn-pro btn-rojo" onclick="document.getElementById('modalIndice').style.display='none'">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TEMAS -->
+<div id="modalTemas" class="modal">
+  <div class="modal-content">
+    <h2 style="text-align:center;color:var(--primario);margin-bottom:20px;">TEMAS Y COLORES</h2>
+    <div class="color-row"><label>Borde de hoja A4</label><input type="color" id="colorBordeA4" value="#0066cc"></div>
+    <div class="color-row"><label>Grosor borde (px)</label><input type="range" min="1" max="20" value="6" id="grosorBordeA4"></div>
+    <div class="color-row"><label>Fondo de hoja</label><input type="color" id="colorFondoA4" value="#ffffff"></div>
+    <div class="color-row"><label>Línea bajo título</label><input type="color" id="colorLineaTitulo" value="#0066cc"></div>
+    <div class="color-row"><label>Grosor línea título (px)</label><input type="range" min="1" max="15" value="6" id="grosorLineaTitulo"></div>
+    <div class="color-row"><label>Fondo membrete</label><input type="color" id="colorMembreteBg" value="#003366"></div>
+    <div class="color-row"><label>Texto membrete</label><input type="color" id="colorMembreteTexto" value="#ffffff"></div>
+    <div class="color-row"><label>Fondo bloque info</label><input type="color" id="colorInfoBg" value="#f8fbff"></div>
+    <div class="color-row"><label>Texto bloque info</label><input type="color" id="colorInfoTexto" value="#003366"></div>
+    <div class="color-row"><label>Pie de foto (inicio)</label><input type="color" id="colorPieStart" value="#99ccff"></div>
+    <div class="color-row"><label>Pie de foto (fin)</label><input type="color" id="colorPieEnd" value="#66b3ff"></div>
+    <div class="color-row"><label>Texto pie de foto</label><input type="color" id="colorPieTexto" value="#003366"></div>
+
+    <div style="margin:25px 0;padding:15px;background:#f0f0f0;border-radius:12px;">
+      <label style="display:block;margin-bottom:10px;font-weight:600;">Imagen de fondo (marca de agua)</label>
+      <input type="file" accept="image/*" id="inputFondoImagen">
+      <div style="margin-top:10px;">
+        <label>Opacidad: <span id="valOpacidad">15</span>%</label>
+        <input type="range" min="0" max="100" value="15" id="opacidadFondo">
+      </div>
+      <button class="btn-pro btn-rojo" style="margin-top:10px;width:100%;" onclick="document.getElementById('inputFondoImagen').value='';aplicarTema({fondoImagen:'none'})">Quitar imagen de fondo</button>
+    </div>
+
+    <div style="text-align:right;margin-top:30px;">
+      <button class="btn-pro btn-rojo" onclick="document.getElementById('modalTemas').style.display='none'">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOMBRES -->
+<div id="modalNombres" class="modal">
+  <div class="modal-content">
+    <h3>10 Descripciones Personalizadas</h3>
+    <p style="text-align:center;color:#666;margin:20px 0 10px;">Selecciona plantilla o escribe manualmente</p>
+    <div style="text-align:center;margin:20px 0;">
+      <select id="selectorPlantilla" style="padding:14px 20px; font-size:1rem; width:50%; max-width:600px; border-radius:12px; border:3px solid var(--acento); background:white;">
+        <option value="">– Elige una plantilla del Excel –</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin-top:20px;">
+      <input type="text" class="desc-input" id="desc1" placeholder="Descripción 1">
+      <input type="text" class="desc-input" id="desc2" placeholder="Descripción 2">
+      <input type="text" class="desc-input" id="desc3" placeholder="Descripción 3">
+      <input type="text" class="desc-input" id="desc4" placeholder="Descripción 4">
+      <input type="text" class="desc-input" id="desc5" placeholder="Descripción 5">
+      <input type="text" class="desc-input" id="desc6" placeholder="Descripción 6">
+      <input type="text" class="desc-input" id="desc7" placeholder="Descripción 7">
+      <input type="text" class="desc-input" id="desc8" placeholder="Descripción 8">
+      <input type="text" class="desc-input" id="desc9" placeholder="Descripción 9">
+      <input type="text" class="desc-input" id="desc10" placeholder="Descripción 10">
+    </div>
+    <div style="text-align:right;margin-top:35px;">
+      <button class="btn-pro btn-rojo" style="margin-right:15px;" onclick="document.getElementById('modalNombres').style.display='none'">Cancelar</button>
+      <button class="btn-pro btn-rojo" onclick="aplicarNombres()">Aplicar a Todos</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="inputZip" accept=".zip" style="display:none;">
+<input type="file" id="inputProyecto" accept=".guralmo" style="display:none;">
+
+<script>
+  let carpetas = [];
+  let baseDatos = {};
+  let membreteGlobal = "Adquisición de Medidor de Corriente de Agua; en el Parque de Medidores de la EPS SEDALIB S.A y Ampliación de Cobertura de Micromedición - Provincias de Trujillo, Ascope, Chepén y el Distrito de Trujillo, Provincia Trujillo, Departamento La Libertad - Segunda Etapa con CUI N° 2574429";
+  let mostrarInfo = true;
+  let mostrarMembreteGlobal = true;
+  let mostrarCodigoEnPie = true;
+  let mostrarTitulo = true;
+  let plantillasDescripciones = [];
+  let descripcionesActuales = [
+    "Antes de la instalación","Medidor retirado","Medidor instalado","Lectura inicial",
+    "Sellos colocados","Tapa colocada","Caja cerrada","Vista general","Detalle medidor","Ubicación en calle"
+  ];
+  let piesPersonalizados = {};
+
+  const contextMenu = document.getElementById('contextMenu');
+  let fotoActiva = null;
+
+  document.getElementById('btnInfo').onclick = () => { mostrarInfo=!mostrarInfo; document.getElementById('btnInfo').classList.toggle('activo'); generarPaneles(); };
+  document.getElementById('btnMembrete').onclick = () => { mostrarMembreteGlobal=!mostrarMembreteGlobal; document.getElementById('btnMembrete').classList.toggle('activo'); generarPaneles(); };
+  document.getElementById('btnCodigo').onclick = () => { mostrarCodigoEnPie=!mostrarCodigoEnPie; document.getElementById('btnCodigo').classList.toggle('activo'); generarPaneles(); };
+  document.getElementById('btnTitulo').onclick = () => { mostrarTitulo=!mostrarTitulo; document.getElementById('btnTitulo').classList.toggle('activo'); generarPaneles(); };
+  document.getElementById('btnNombrar').onclick = () => document.getElementById('modalNombres').style.display='flex';
+  document.getElementById('btnTemas').onclick = () => document.getElementById('modalTemas').style.display='flex';
+  document.getElementById('btnZip').onclick = () => document.getElementById('inputZip').click();
+  document.getElementById('btnImprimir').onclick = () => window.print();
+  document.getElementById('btnLimpiar').onclick = () => confirm("¿Borrar todo?") && location.reload();
+  document.getElementById('btnEditarMembrete').onclick = () => { document.getElementById('membreteTextarea').value = membreteGlobal; document.getElementById('modalMembrete').style.display = 'flex'; };
+  document.getElementById('btnGenerarIndice').onclick = generarIndice;
+  document.getElementById('btnCargar').onclick = () => document.getElementById('inputProyecto').click();
+
+  function aplicarMembrete() {
+    membreteGlobal = document.getElementById('membreteTextarea').value;
+    document.getElementById('modalMembrete').style.display = 'none';
+    generarPaneles();
+  }
+
+  function generarIndice() {
+    if (carpetas.length === 0) { alert("No hay carpetas cargadas."); return; }
+    let tabla = `<table><thead><tr><th>SUMINISTRO</th><th>PÁGINA(S)</th></tr></thead><tbody>`;
+    let paginaActual = 1;
+    carpetas.forEach(carpeta => {
+      const porHoja = 4;
+      const hojas = Math.ceil(carpeta.fotos.length / porHoja);
+      const paginas = hojas === 1 ? paginaActual : `${paginaActual} - ${paginaActual + hojas - 1}`;
+      tabla += `<tr><td><strong>${carpeta.nombre}</strong></td><td>${paginas}</td></tr>`;
+      paginaActual += hojas;
+    });
+    tabla += `</tbody></table>`;
+    document.getElementById('contenidoIndice').innerHTML = tabla;
+    document.getElementById('modalIndice').style.display = 'flex';
+  }
+
+  document.getElementById('btnDescargarPDF').onclick = () => {
+    const element = document.getElementById('contenidoIndice');
+    const opt = {
+      margin: 20,
+      filename: 'Indice_Suministros_PF2_2025.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+  };
+
+  function aplicarTema(tema = {}) {
+    const root = document.documentElement;
+    const vals = {
+      '--color-borde-a4': tema.colorBordeA4 ?? document.getElementById('colorBordeA4').value,
+      '--grosor-borde-a4': (tema.grosorBordeA4 ?? document.getElementById('grosorBordeA4').value) + 'px',
+      '--color-fondo-a4': tema.colorFondoA4 ?? document.getElementById('colorFondoA4').value,
+      '--color-titulo-linea': tema.colorLineaTitulo ?? document.getElementById('colorLineaTitulo').value,
+      '--grosor-linea-titulo': (tema.grosorLineaTitulo ?? document.getElementById('grosorLineaTitulo').value) + 'px',
+      '--color-membrete-bg': tema.colorMembreteBg ?? document.getElementById('colorMembreteBg').value,
+      '--color-membrete-texto': tema.colorMembreteTexto ?? document.getElementById('colorMembreteTexto').value,
+      '--color-info-bg': tema.colorInfoBg ?? document.getElementById('colorInfoBg').value,
+      '--color-info-texto': tema.colorInfoTexto ?? document.getElementById('colorInfoTexto').value,
+      '--color-pie-bg-start': tema.colorPieStart ?? document.getElementById('colorPieStart').value,
+      '--color-pie-bg-end': tema.colorPieEnd ?? document.getElementById('colorPieEnd').value,
+      '--color-pie-texto': tema.colorPieTexto ?? document.getElementById('colorPieTexto').value,
+      '--opacidad-fondo-imagen': (tema.opacidadFondo ?? document.getElementById('opacidadFondo').value)/100,
+      '--fondo-imagen-a4': tema.fondoImagen ?? getComputedStyle(root).getPropertyValue('--fondo-imagen-a4').trim()
+    };
+    Object.keys(vals).forEach(k => root.style.setProperty(k, vals[k]));
+  }
+  document.querySelectorAll('#modalTemas input[type=color], #modalTemas input[type=range]').forEach(el => el.addEventListener('input', aplicarTema));
+  document.getElementById('opacidadFondo').addEventListener('input', e => { document.getElementById('valOpacidad').textContent = e.target.value; aplicarTema(); });
+  document.getElementById('inputFondoImagen').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) { const reader = new FileReader(); reader.onload = ev => aplicarTema({fondoImagen: `url(${ev.target.result})`}); reader.readAsDataURL(file); }
+  });
+
+  document.getElementById('inputCarpeta').addEventListener('change', e => {
+    const archivos = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+    const grupos = {};
+    archivos.forEach(f => {
+      const carpeta = (f.webkitRelativePath || f.name).split('/')[0];
+      if (!grupos[carpeta]) grupos[carpeta] = [];
+      grupos[carpeta].push(f);
+    });
+    Object.keys(grupos).forEach(nombre => {
+      const fotos = grupos[nombre].sort((a,b)=>a.name.localeCompare(b.name));
+      const existente = carpetas.find(c=>c.nombre===nombre);
+      if (existente) existente.fotos.push(...fotos.map(f=>({file:f,x:0,y:0,scale:0.5,rotation:0})));
+      else carpetas.push({nombre,fotos:fotos.map(f=>({file:f,x:0,y:0,scale:0.5,rotation:0})),nombresFijos:null});
+    });
+    generarPaneles();
+  });
+
+  document.getElementById('inputZip').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('progreso').textContent = `Cargando ${file.name}...`;
+    try {
+      const zip = await JSZip.loadAsync(file);
+      const grupos = {};
+      for (const [ruta,entry] of Object.entries(zip.files)) {
+        if (entry.dir || !/\.(jpe?g|png|gif|webp)$/i.test(ruta)) continue;
+        const partes = ruta.split(/[/\\]/);
+        const carpeta = partes.length>1 ? partes.slice(0,-1).join('/') : 'Sin carpeta';
+        const blob = await entry.async('blob');
+        const archivo = new File([blob], partes[partes.length-1], {type:blob.type});
+        if (!grupos[carpeta]) grupos[carpeta]=[];
+        grupos[carpeta].push(archivo);
+      }
+      Object.keys(grupos).forEach(nombre => {
+        const fotos = grupos[nombre].sort((a,b)=>a.name.localeCompare(b.name));
+        const existente = carpetas.find(c=>c.nombre===nombre);
+        if (existente) existente.fotos.push(...fotos.map(f=>({file:f,x:0,y:0,scale:0.5,rotation:0})));
+        else carpetas.push({nombre,fotos:fotos.map(f=>({file:f,x:0,y:0,scale:0.5,rotation:0})),nombresFijos:null});
+      });
+      document.getElementById('progreso').textContent = `ZIP cargado: ${Object.keys(grupos).length} carpetas`;
+      generarPaneles();
+    } catch(err) { alert('Error ZIP: '+err.message); document.getElementById('progreso').textContent='Error'; }
+  });
+
+  document.getElementById('excelFile').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const r = new FileReader();
+    r.onload = e => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data,{type:'array'});
+        baseDatos = {}; plantillasDescripciones = [];
+        wb.SheetNames.forEach(sn => {
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:""});
+          if(sn.toLowerCase()==="descripciones"){
+            const max = rows[0]?rows[0].length:0;
+            for(let c=0;c<Math.min(max,10);c++){
+              const nom = rows[0][c]?String(rows[0][c]).trim():`Plantilla ${String.fromCharCode(65+c)}`;
+              const d=[];
+              for(let r=1;r<=10;r++) d.push(rows[r]&&rows[r][c]?String(rows[r][c]).trim():`Foto ${r}`);
+              plantillasDescripciones.push({nombre:nom,descripciones:d});
             }
-            return false;
-        };
-    </script>
-    <div id="root"></div>
+            const sel = document.getElementById('selectorPlantilla');
+            sel.innerHTML = '<option value="">– Elige una plantilla del Excel –</option>';
+            plantillasDescripciones.forEach((p,i) => {
+              const opt = document.createElement('option');
+              opt.value = i;
+              opt.textContent = p.nombre;
+              sel.appendChild(opt);
+            });
+          } else {
+            rows.forEach(r=>{ if(r[0]){ const cod=String(r[0]).trim().toUpperCase();
+              baseDatos[cod]={usuario:String(r[1]||"").trim(),tipo:String(r[2]||"").trim(),nuevo:String(r[3]||"").trim(),
+                categoria:String(r[4]||"").trim(),zona:String(r[5]||"").trim(),direccion:String(r[6]||"").trim()};
+            }});
+          }
+        });
+        document.getElementById('excelStatus').textContent=`Excel cargado: ${Object.keys(baseDatos).length} suministros + ${plantillasDescripciones.length} plantillas`;
+        generarPaneles();
+      } catch(err){ alert("Error Excel: "+err.message); document.getElementById('excelStatus').textContent="error"; }
+    };
+    r.readAsArrayBuffer(file);
+  });
 
-    <script type="text/babel" data-presets="env,react">
-        const { useState, useEffect, useRef } = React;
+  document.getElementById('selectorPlantilla').addEventListener('change', function(){
+    const i = this.value;
+    if(i==="") actualizarDescripciones(descripcionesActuales);
+    else actualizarDescripciones(plantillasDescripciones[i].descripciones);
+  });
 
-        const Icon = ({ name, size = 16, className = "" }) => {
-            const [svg, setSvg] = useState('');
+  function aplicarNombres(){
+    const nuevas = [];
+    for(let i=1;i<=10;i++){
+      const val = document.getElementById('desc'+i).value.trim();
+      nuevas.push(val || `Descripción ${i}`);
+    }
+    descripcionesActuales = nuevas;
+    actualizarDescripciones(nuevas);
+    carpetas.forEach(c => c.nombresFijos = nuevas.slice(0,c.fotos.length));
+    document.getElementById('modalNombres').style.display='none';
+    generarPaneles();
+  }
 
-            useEffect(() => {
-                const updateIcon = () => {
-                    try {
-                        if (window.lucide) {
-                            const icons = window.lucide.icons || window.lucide;
-                            const iconData = icons[name];
-                            if (iconData && typeof iconData.toSvg === 'function') {
-                                setSvg(iconData.toSvg({
-                                    width: size,
-                                    height: size,
-                                    'stroke-width': 2,
-                                }));
-                                return true;
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Error loading icon:', name, e);
-                    }
-                    return false;
-                };
+  document.getElementById('btnGuardar').onclick = async () => {
+    if(carpetas.length===0) return alert("No hay fotos");
+    const zip = new JSZip();
+    const temaActual = {
+      colorBordeA4: getComputedStyle(document.documentElement).getPropertyValue('--color-borde-a4').trim(),
+      grosorBordeA4: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--grosor-borde-a4')),
+      colorFondoA4: getComputedStyle(document.documentElement).getPropertyValue('--color-fondo-a4').trim(),
+      colorLineaTitulo: getComputedStyle(document.documentElement).getPropertyValue('--color-titulo-linea').trim(),
+      grosorLineaTitulo: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--grosor-linea-titulo')),
+      colorMembreteBg: getComputedStyle(document.documentElement).getPropertyValue('--color-membrete-bg').trim(),
+      colorMembreteTexto: getComputedStyle(document.documentElement).getPropertyValue('--color-membrete-texto').trim(),
+      colorInfoBg: getComputedStyle(document.documentElement).getPropertyValue('--color-info-bg').trim(),
+      colorInfoTexto: getComputedStyle(document.documentElement).getPropertyValue('--color-info-texto').trim(),
+      colorPieStart: getComputedStyle(document.documentElement).getPropertyValue('--color-pie-bg-start').trim(),
+      colorPieEnd: getComputedStyle(document.documentElement).getPropertyValue('--color-pie-bg-end').trim(),
+      colorPieTexto: getComputedStyle(document.documentElement).getPropertyValue('--color-pie-texto').trim(),
+      opacidadFondo: Math.round(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--opacidad-fondo-imagen'))*100),
+      fondoImagen: getComputedStyle(document.documentElement).getPropertyValue('--fondo-imagen-a4').trim()
+    };
 
-                if (!updateIcon()) {
-                    const interval = setInterval(() => {
-                        if (updateIcon()) clearInterval(interval);
-                    }, 100);
-                    return () => clearInterval(interval);
-                }
-            }, [name, size]);
+    const p = {
+      version:"1.5",
+      fecha:new Date().toISOString(),
+      membrete: membreteGlobal,
+      mostrarInfo, mostrarMembreteGlobal, mostrarCodigoEnPie, mostrarTitulo,
+      baseDatos:JSON.stringify(baseDatos),
+      descripcionesActuales,
+      piesPersonalizados,
+      tema: temaActual,
+      carpetas:[]
+    };
 
-            if (!svg) {
-                return <span className={`inline-block ${className}`} style={{ width: size, height: size }}></span>;
-            }
+    for(const c of carpetas){
+      const fotos=[];
+      for(const f of c.fotos){
+        const b = await fetch(URL.createObjectURL(f.file)).then(r=>r.blob());
+        zip.file(`fotos/${c.nombre}/${f.file.name}`,b);
+        fotos.push({nombre:f.file.name,x:f.x,y:f.y,scale:f.scale,rotation:f.rotation});
+      }
+      p.carpetas.push({nombre:c.nombre,fotos,nombresFijos:c.nombresFijos});
+    }
+    zip.file("proyecto.json",JSON.stringify(p,null,2));
+    const blob = await zip.generateAsync({type:"blob"});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`PF2_2025_${new Date().toISOString().slice(0,10)}.guralmo`;
+    a.click();
+    alert("Proyecto guardado correctamente");
+  };
 
-            return <span 
-                className={`inline-flex items-center justify-center lucide-icon ${className}`}
-                dangerouslySetInnerHTML={{ __html: svg }} 
-                aria-hidden="true"
-            />;
-        };
-
-        function App() {
-            const [photos, setPhotos] = useState([]);
-            const [stagedPhotos, setStagedPhotos] = useState([]);
-            const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-            const [layoutMode, setLayoutMode] = useState(2);
-            const [globalTitle, setGlobalTitle] = useState('PANEL FOTOGRAFICO');
-            const [globalHeader, setGlobalHeader] = useState('Descripcion de obra...');
-            const [globalFooter, setGlobalFooter] = useState('PANEL FOTOGRAFICO-GU');
-            const [showReportHeader, setShowReportHeader] = useState(true);
-            const [showReportFooter, setShowReportFooter] = useState(true);
-            const [zoom, setZoom] = useState(53);
-            const [viewMode, setViewMode] = useState('column'); // 'column' or 'grid'
-            const [draggingId, setDraggingId] = useState(null);
-            const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
-            const [isDraggingOver, setIsDraggingOver] = useState(false);
-            const [draggedPhotoIndex, setDraggedPhotoIndex] = useState(null);
-            const [dragOverIndex, setDragOverIndex] = useState(null);
-            const [draggedStagedIndex, setDraggedStagedIndex] = useState(null);
-            const [dragOverStagedIndex, setDragOverStagedIndex] = useState(null);
-
-            const imagesInputRef = useRef(null);
-            const folderInputRef = useRef(null);
-            const projectInputRef = useRef(null);
-
-            const saveProject = () => {
-                const projectData = {
-                    photos,
-                    stagedPhotos,
-                    layoutMode,
-                    globalTitle,
-                    globalHeader,
-                    globalFooter,
-                    showReportHeader,
-                    showReportFooter,
-                    zoom,
-                    viewMode
-                };
-                const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `proyecto-guralmo-${new Date().toISOString().slice(0, 10)}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            };
-
-            const loadProject = (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        if (data.photos) setPhotos(data.photos);
-                        if (data.stagedPhotos) setStagedPhotos(data.stagedPhotos);
-                        if (data.layoutMode) setLayoutMode(data.layoutMode);
-                        if (data.globalTitle) setGlobalTitle(data.globalTitle);
-                        if (data.globalHeader) setGlobalHeader(data.globalHeader);
-                        if (data.globalFooter) setGlobalFooter(data.globalFooter);
-                        if (data.showReportHeader !== undefined) setShowReportHeader(data.showReportHeader);
-                        if (data.showReportFooter !== undefined) setShowReportFooter(data.showReportFooter);
-                        if (data.zoom) setZoom(data.zoom);
-                        if (data.viewMode) setViewMode(data.viewMode);
-                    } catch (err) {
-                        console.error("Error al cargar el proyecto:", err);
-                        alert("El archivo no es un proyecto válido.");
-                    }
-                };
-                reader.readAsText(file);
-                event.target.value = ''; // Reset input
-            };
-
-            const exportToWord = async () => {
-                if (photos.length === 0) return;
-
-                try {
-                    // Intento de detección robusta de la librería
-                    const docxLib = window.docx || window.DOCX || (typeof docx !== 'undefined' ? docx : null);
-                    
-                    if (!docxLib) {
-                        console.log("Debug - Librerías cargadas:", Object.keys(window).filter(k => k.length < 10));
-                        alert("La herramienta de Word aún se está cargando o ha sido bloqueada por su navegador. Por favor:\n1. Verifique su conexión a internet.\n2. Intente abrir el archivo con Microsoft Edge o Firefox.\n3. Espere 5 segundos y vuelva a intentar.");
-                        return;
-                    }
-
-                    const { Document, Packer, Paragraph, TextRun, ImageRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, SectionType, Footer } = docxLib;
-
-                    const sections = [];
-                    const photosPerPage = layoutMode;
-                    const totalPages = Math.ceil(photos.length / photosPerPage);
-
-                    for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
-                        const pagePhotos = photos.slice(pageIndex * photosPerPage, (pageIndex + 1) * photosPerPage);
-                        const children = [];
-
-                        // Header (Title and Description)
-                        if (showReportHeader) {
-                            children.push(
-                                new Paragraph({
-                                    alignment: AlignmentType.CENTER,
-                                    children: [
-                                        new TextRun({
-                                            text: globalTitle,
-                                            bold: true,
-                                            size: 36,
-                                            allCaps: true,
-                                            font: "Calibri",
-                                        }),
-                                    ],
-                                    spacing: { after: 200 },
-                                })
-                            );
-
-                            if (globalHeader.trim()) {
-                                children.push(
-                                    new Table({
-                                        width: { size: 100, type: WidthType.PERCENTAGE },
-                                        rows: [
-                                            new TableRow({
-                                                children: [
-                                                    new TableCell({
-                                                        children: [
-                                                            new Paragraph({
-                                                                alignment: AlignmentType.CENTER,
-                                                                children: [
-                                                                    new TextRun({
-                                                                        text: globalHeader,
-                                                                        color: "FFFFFF",
-                                                                        font: "Courier New",
-                                                                        size: 20,
-                                                                    }),
-                                                                ],
-                                                            }),
-                                                        ],
-                                                        shading: { fill: "0F172A" },
-                                                        margins: { top: 200, bottom: 200, left: 200, right: 200 },
-                                                    }),
-                                                ],
-                                            }),
-                                        ],
-                                    })
-                                );
-                                children.push(new Paragraph({ spacing: { before: 400 } }));
-                            }
-                        }
-
-                        // Photos Grid
-                        const tableRows = [];
-                        if (layoutMode === 2) {
-                            // 2 photos per page (1 column, 2 rows)
-                            for (const photo of pagePhotos) {
-                                try {
-                                    const imageBuffer = await fetch(photo.url).then(r => r.arrayBuffer());
-                                    tableRows.push(
-                                        new TableRow({
-                                            children: [
-                                                new TableCell({
-                                                    children: [
-                                                        new Paragraph({
-                                                            alignment: AlignmentType.CENTER,
-                                                            children: [
-                                                                new ImageRun({
-                                                                    data: imageBuffer,
-                                                                    transformation: { width: 450, height: 300 },
-                                                                }),
-                                                            ],
-                                                        }),
-                                                        new Paragraph({
-                                                            children: [
-                                                                new TextRun({
-                                                                    text: `IMG ${photos.indexOf(photo) + 1} - ${photo.name}`,
-                                                                    bold: true,
-                                                                    font: "Calibri",
-                                                                    size: 22,
-                                                                }),
-                                                            ],
-                                                            spacing: { before: 100 },
-                                                            shading: { fill: "F1F5F9" },
-                                                        }),
-                                                    ],
-                                                    borders: {
-                                                        top: { style: BorderStyle.SINGLE, size: 4, color: "0F172A" },
-                                                        bottom: { style: BorderStyle.SINGLE, size: 4, color: "0F172A" },
-                                                        left: { style: BorderStyle.SINGLE, size: 10, color: "0F172A" },
-                                                        right: { style: BorderStyle.SINGLE, size: 4, color: "0F172A" },
-                                                    },
-                                                    margins: { top: 100, bottom: 100, left: 100, right: 100 },
-                                                }),
-                                            ],
-                                        })
-                                    );
-                                } catch (imgErr) {
-                                    console.error("Error cargando imagen para Word:", imgErr);
-                                }
-                            }
-                        } else {
-                            // 4 photos per page (2 columns, 2 rows)
-                            for (let i = 0; i < pagePhotos.length; i += 2) {
-                                const rowPhotos = pagePhotos.slice(i, i + 2);
-                                const cells = [];
-                                for (const photo of rowPhotos) {
-                                    try {
-                                        const imageBuffer = await fetch(photo.url).then(r => r.arrayBuffer());
-                                        cells.push(
-                                            new TableCell({
-                                                children: [
-                                                    new Paragraph({
-                                                        alignment: AlignmentType.CENTER,
-                                                        children: [
-                                                            new ImageRun({
-                                                                data: imageBuffer,
-                                                                transformation: { width: 220, height: 160 },
-                                                            }),
-                                                        ],
-                                                    }),
-                                                    new Paragraph({
-                                                        children: [
-                                                            new TextRun({
-                                                                text: `IMG ${photos.indexOf(photo) + 1} - ${photo.name}`,
-                                                                bold: true,
-                                                                font: "Calibri",
-                                                                size: 18,
-                                                            }),
-                                                        ],
-                                                        spacing: { before: 100 },
-                                                        shading: { fill: "F1F5F9" },
-                                                    }),
-                                                ],
-                                                borders: {
-                                                    top: { style: BorderStyle.SINGLE, size: 4, color: "0F172A" },
-                                                    bottom: { style: BorderStyle.SINGLE, size: 4, color: "0F172A" },
-                                                    left: { style: BorderStyle.SINGLE, size: 10, color: "0F172A" },
-                                                    right: { style: BorderStyle.SINGLE, size: 4, color: "0F172A" },
-                                                },
-                                                margins: { top: 100, bottom: 100, left: 100, right: 100 },
-                                            })
-                                        );
-                                    } catch (imgErr) {
-                                        console.error("Error cargando imagen para Word:", imgErr);
-                                        cells.push(new TableCell({ children: [new Paragraph("Error al cargar imagen")] }));
-                                    }
-                                }
-                                // Add empty cell if row is not full
-                                if (cells.length === 1) {
-                                    cells.push(new TableCell({ children: [] }));
-                                }
-                                tableRows.push(new TableRow({ children: cells }));
-                            }
-                        }
-
-                        children.push(
-                            new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                rows: tableRows,
-                            })
-                        );
-
-                        sections.push({
-                            properties: {
-                                type: SectionType.NEXT_PAGE,
-                            },
-                            children: children,
-                            footers: showReportFooter ? {
-                                default: new Footer({
-                                    children: [
-                                        new Paragraph({
-                                            border: { top: { style: BorderStyle.SINGLE, size: 4, color: "0F172A" } },
-                                            spacing: { before: 200 },
-                                            children: [
-                                                new TextRun({
-                                                    text: globalFooter,
-                                                    bold: true,
-                                                    size: 18,
-                                                    font: "Courier New",
-                                                }),
-                                                new TextRun({
-                                                    text: `\tPágina ${pageIndex + 1} de ${totalPages}`,
-                                                    bold: true,
-                                                    size: 18,
-                                                    font: "Calibri",
-                                                }),
-                                            ],
-                                        }),
-                                    ],
-                                }),
-                            } : undefined,
-                        });
-                    }
-
-                    const doc = new Document({
-                        sections: sections,
-                    });
-
-                    const blob = await Packer.toBlob(doc);
-                    window.saveAs(blob, `${globalTitle || 'Panel_Fotografico'}.docx`);
-
-                } catch (error) {
-                    console.error("Error al exportar a Word:", error);
-                    alert("Hubo un error al generar el archivo Word: " + error.message);
-                }
-            };
-
-            useEffect(() => {
-                const preventDefault = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                };
-                window.addEventListener('dragover', preventDefault);
-                window.addEventListener('drop', preventDefault);
-                return () => {
-                    window.removeEventListener('dragover', preventDefault);
-                    window.removeEventListener('drop', preventDefault);
-                    photos.forEach(photo => URL.revokeObjectURL(photo.url));
-                };
-            }, [photos]);
-
-            const handleFiles = (files) => {
-                if (!files || files.length === 0) return;
-
-                stagedPhotos.forEach(p => URL.revokeObjectURL(p.url));
-                const newPhotos = Array.from(files)
-                    .filter(file => file.type.startsWith('image/'))
-                    .map(file => {
-                        const path = file.webkitRelativePath || file.name;
-                        const name = path.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
-
-                        return {
-                            id: Math.random().toString(36).substr(2, 9),
-                            file,
-                            url: URL.createObjectURL(file),
-                            name: name,
-                            zoom: 1,
-                            rotation: 0,
-                            offset: { x: 0, y: 0 },
-                            selected: true
-                        };
-                    });
-
-                if (newPhotos.length > 0) {
-                    setStagedPhotos(prev => [...prev, ...newPhotos]);
-                    setIsImportModalOpen(true);
-                }
-            };
-
-            const handleDragOver = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDraggingOver(true);
-            };
-
-            const handleDragLeave = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDraggingOver(false);
-            };
-
-            const handleDrop = async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDraggingOver(false);
-
-                const items = e.dataTransfer.items;
-                if (!items) return;
-
-                const files = [];
-                const readEntry = async (entry) => {
-                    if (entry.isFile) {
-                        const file = await new Promise((resolve) => entry.file(resolve));
-                        if (file.type.startsWith('image/')) {
-                            files.push(file);
-                        }
-                    } else if (entry.isDirectory) {
-                        const reader = entry.createReader();
-                        const readAllEntries = async () => {
-                            const entries = await new Promise((resolve) => reader.readEntries(resolve));
-                            if (entries.length > 0) {
-                                for (const childEntry of entries) {
-                                    await readEntry(childEntry);
-                                }
-                                await readAllEntries();
-                            }
-                        };
-                        await readAllEntries();
-                    }
-                };
-
-                const promises = [];
-                for (let i = 0; i < items.length; i++) {
-                    const entry = items[i].webkitGetAsEntry();
-                    if (entry) {
-                        promises.push(readEntry(entry));
-                    }
-                }
-
-                await Promise.all(promises);
-                if (files.length > 0) {
-                    handleFiles(files);
-                }
-            };
-
-            const confirmImport = () => {
-                const selected = stagedPhotos.filter(p => p.selected);
-                setPhotos(prev => [...prev, ...selected]);
-                setStagedPhotos([]);
-                setIsImportModalOpen(false);
-            };
-
-            const cancelImport = () => {
-                stagedPhotos.forEach(p => URL.revokeObjectURL(p.url));
-                setStagedPhotos([]);
-                setIsImportModalOpen(false);
-            };
-
-            const removePhoto = (id) => {
-                setPhotos(prev => {
-                    const photoToRemove = prev.find(p => p.id === id);
-                    if (photoToRemove) URL.revokeObjectURL(photoToRemove.url);
-                    return prev.filter(p => p.id !== id);
-                });
-            };
-
-            const handlePhotoDragStart = (e, index) => {
-                setDraggedPhotoIndex(index);
-                e.dataTransfer.effectAllowed = 'move';
-                // Create a ghost image or just let it be
-            };
-
-            const handlePhotoDragOver = (e, index) => {
-                e.preventDefault();
-                if (draggedPhotoIndex === null) return;
-                setDragOverIndex(index);
-            };
-
-            const handlePhotoDrop = (e, targetIndex) => {
-                e.preventDefault();
-                if (draggedPhotoIndex === null || draggedPhotoIndex === targetIndex) {
-                    setDraggedPhotoIndex(null);
-                    setDragOverIndex(null);
-                    return;
-                }
-
-                setPhotos(prev => {
-                    const newPhotos = [...prev];
-                    const [movedPhoto] = newPhotos.splice(draggedPhotoIndex, 1);
-                    newPhotos.splice(targetIndex, 0, movedPhoto);
-                    return newPhotos;
-                });
-                setDraggedPhotoIndex(null);
-                setDragOverIndex(null);
-            };
-
-            const removeStagedPhoto = (id) => {
-                setStagedPhotos(prev => {
-                    const photo = prev.find(p => p.id === id);
-                    if (photo) URL.revokeObjectURL(photo.url);
-                    return prev.filter(p => p.id !== id);
-                });
-            };
-
-            const moveStagedPhoto = (index, direction) => {
-                setStagedPhotos(prev => {
-                    const newArr = [...prev];
-                    const targetIndex = index + direction;
-                    if (targetIndex < 0 || targetIndex >= newArr.length) return prev;
-                    [newArr[index], newArr[targetIndex]] = [newArr[targetIndex], newArr[index]];
-                    return newArr;
-                });
-            };
-
-            const handleStagedDragStart = (e, index) => {
-                setDraggedStagedIndex(index);
-                e.dataTransfer.effectAllowed = 'move';
-            };
-
-            const handleStagedDragOver = (e, index) => {
-                e.preventDefault();
-                if (draggedStagedIndex === null) return;
-                setDragOverStagedIndex(index);
-            };
-
-            const handleStagedDrop = (e, targetIndex) => {
-                e.preventDefault();
-                if (draggedStagedIndex === null || draggedStagedIndex === targetIndex) {
-                    setDraggedStagedIndex(null);
-                    setDragOverStagedIndex(null);
-                    return;
-                }
-
-                setStagedPhotos(prev => {
-                    const newPhotos = [...prev];
-                    const [movedPhoto] = newPhotos.splice(draggedStagedIndex, 1);
-                    newPhotos.splice(targetIndex, 0, movedPhoto);
-                    return newPhotos;
-                });
-                setDraggedStagedIndex(null);
-                setDragOverStagedIndex(null);
-            };
-
-            const clearAll = () => {
-                if (window.confirm('¿Eliminar todas las fotos y limpiar todo?')) {
-                    photos.forEach(p => URL.revokeObjectURL(p.url));
-                    setPhotos([]);
-                }
-            };
-
-            const totalPages = Math.ceil(photos.length / layoutMode);
-
-            return (
-                <div className="flex bg-slate-100 min-h-screen">
-                    {/* Sidebar de Control */}
-                    <aside className="sidebar-control no-print">
-                        <div className="mb-8 border-b border-slate-800 pb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-orange-600 p-2.5 rounded shadow-lg shadow-orange-900/40">
-                                    <Icon name="FileText" className="text-white" size={22} />
-                                </div>
-                                <div>
-                                    <h1 className="text-[12px] font-black text-white uppercase tracking-widest leading-none">PANEL FOTOGRAFICO</h1>
-                                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1.5 block">SISTEMA DE REPORTES GU</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 space-y-2">
-                            <section className="sidebar-section">
-                                <span className="sidebar-title">Importación</span>
-                                <div className="grid grid-cols-1 gap-2">
-                                    <button onClick={() => imagesInputRef.current?.click()} className="sidebar-button sidebar-button-primary">
-                                        <Icon name="Image" size={14} /> Añadir Imágenes
-                                    </button>
-                                    <button onClick={() => folderInputRef.current?.click()} className="sidebar-button sidebar-button-secondary">
-                                        <Icon name="FolderOpen" size={14} className="text-orange-500" /> Cargar Carpeta
-                                    </button>
-                                </div>
-                            </section>
-
-                            <section className="sidebar-section">
-                                <span className="sidebar-title">Estructura</span>
-                                <div className="flex p-1 bg-slate-800 border border-slate-700 rounded-lg">
-                                    <button onClick={() => setLayoutMode(2)} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${layoutMode === 2 ? 'bg-orange-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>
-                                        <Icon name="LayoutList" size={12} /> 2 Fotos
-                                    </button>
-                                    <button onClick={() => setLayoutMode(4)} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${layoutMode === 4 ? 'bg-orange-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>
-                                        <Icon name="LayoutGrid" size={12} /> 4 Fotos
-                                    </button>
-                                </div>
-                            </section>
-
-                            <section className="sidebar-section">
-                                <span className="sidebar-title">Metadatos</span>
-                                <div className="space-y-3">
-                                    <textarea 
-                                        value={globalTitle}
-                                        onChange={(e) => setGlobalTitle(e.target.value)}
-                                        rows="2"
-                                        placeholder="TÍTULO DEL PROYECTO..."
-                                        className="sidebar-input resize-none"
-                                    />
-                                    <textarea 
-                                        value={globalHeader}
-                                        onChange={(e) => setGlobalHeader(e.target.value)}
-                                        rows="2"
-                                        placeholder="MEMBRETE INFORMATIVO..."
-                                        className="sidebar-input resize-none"
-                                    />
-                                    <input 
-                                        type="text"
-                                        value={globalFooter}
-                                        onChange={(e) => setGlobalFooter(e.target.value)}
-                                        placeholder="PIE DE PÁGINA..."
-                                        className="sidebar-input"
-                                    />
-
-                                    <div className="pt-2 space-y-2">
-                                        <label className="flex items-center gap-3 cursor-pointer group">
-                                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${showReportHeader ? 'bg-orange-600 border-orange-600' : 'bg-slate-800 border-slate-700'}`}>
-                                                {showReportHeader && <Icon name="Check" size={10} className="text-white" />}
-                                                <input type="checkbox" checked={showReportHeader} onChange={(e) => setShowReportHeader(e.target.checked)} className="hidden" />
-                                            </div>
-                                            <span className="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-widest">Cabecera</span>
-                                        </label>
-                                        <label className="flex items-center gap-3 cursor-pointer group">
-                                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${showReportFooter ? 'bg-orange-600 border-orange-600' : 'bg-slate-800 border-slate-700'}`}>
-                                                {showReportFooter && <Icon name="Check" size={10} className="text-white" />}
-                                                <input type="checkbox" checked={showReportFooter} onChange={(e) => setShowReportFooter(e.target.checked)} className="hidden" />
-                                            </div>
-                                            <span className="text-[9px] font-bold text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-widest">Pie de Página</span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </section>
-                        </div>
-
-                        <div className="pt-6 border-t border-slate-800 space-y-2">
-                            <div className="grid grid-cols-2 gap-2 mb-2">
-                                <button onClick={saveProject} className="sidebar-button bg-slate-800 hover:bg-slate-700 text-white border-slate-700">
-                                    <Icon name="Save" size={14} /> Guardar
-                                </button>
-                                <button onClick={() => projectInputRef.current?.click()} className="sidebar-button bg-slate-800 hover:bg-slate-700 text-white border-slate-700">
-                                    <Icon name="FolderOpen" size={14} /> Cargar
-                                </button>
-                                <input type="file" ref={projectInputRef} onChange={loadProject} accept=".json" className="hidden" />
-                            </div>
-                            <button onClick={() => window.print()} disabled={photos.length === 0} className="sidebar-button sidebar-button-primary">
-                                <Icon name="Printer" size={14} /> Generar Reporte
-                            </button>
-                            <button onClick={exportToWord} disabled={photos.length === 0} className="sidebar-button bg-blue-600 hover:bg-blue-500 text-white border-none shadow-lg shadow-blue-900/40">
-                                <Icon name="FileCode" size={14} /> Exportar a Word
-                            </button>
-                            <button onClick={clearAll} className="w-full flex items-center justify-center gap-2 py-2 text-slate-500 hover:text-red-400 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border-none bg-transparent cursor-pointer">
-                                <Icon name="RotateCcw" size={12} /> Limpiar Todo
-                            </button>
-                        </div>
-                    </aside>
-
-                    {/* Área de Visualización */}
-                    <main 
-                        className={`main-viewport ${isDraggingOver ? 'bg-orange-50 ring-4 ring-orange-400 ring-inset' : ''}`}
-                        onDragEnter={handleDragOver}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        onMouseMove={(e) => {
-                            if (!draggingId) return;
-                            const photo = photos.find(p => p.id === draggingId);
-                            if (!photo) return;
-                            const dx = e.clientX - lastMousePos.x;
-                            const dy = e.clientY - lastMousePos.y;
-                            const pageScale = zoom / 100;
-                            setPhotos(prev => prev.map(p => p.id === draggingId ? { 
-                                ...p, offset: { x: p.offset.x + dx / pageScale, y: p.offset.y + dy / pageScale } 
-                            } : p));
-                            setLastMousePos({ x: e.clientX, y: e.clientY });
-                        }}
-                        onMouseUp={() => setDraggingId(null)}
-                        onMouseLeave={() => setDraggingId(null)}
-                    >
-                        <div className="fixed top-6 right-6 z-50 flex flex-col items-center gap-2 no-print bg-slate-900/95 backdrop-blur text-white p-2 rounded-3xl border border-slate-700 shadow-2xl">
-                            <div className="flex flex-col items-center gap-1 pb-2 border-b border-slate-700 w-full">
-                                <button onClick={() => setViewMode('column')} className={`p-1.5 rounded-full transition-all ${viewMode === 'column' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`} title="Vista 1 Hoja">
-                                    <Icon name="File" size={14} />
-                                </button>
-                                <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-full transition-all ${viewMode === 'grid' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`} title="Vista 2 Hojas">
-                                    <Icon name="Files" size={14} />
-                                </button>
-                            </div>
-                            <div className="flex flex-col items-center gap-3 py-1">
-                                <span className="text-[9px] font-black">{zoom}%</span>
-                                <div className="h-24 flex items-center justify-center">
-                                    <input 
-                                        type="range" 
-                                        min="40" 
-                                        max="150" 
-                                        value={zoom} 
-                                        onChange={(e) => setZoom(parseInt(e.target.value))} 
-                                        className="accent-orange-500 cursor-pointer"
-                                        style={{ 
-                                            WebkitAppearance: 'slider-vertical',
-                                            width: '4px',
-                                            height: '80px'
-                                        }}
-                                    />
-                                </div>
-                                <Icon name="Search" size={12} className="text-orange-500" />
-                            </div>
-                        </div>
-
-                        <input type="file" ref={imagesInputRef} className="hidden" multiple accept="image/*" onChange={(e) => handleFiles(e.target.files)} />
-                        <input type="file" ref={folderInputRef} className="hidden" webkitdirectory="" directory="" multiple accept="image/*" onChange={(e) => handleFiles(e.target.files)} />
-
-                        {photos.length === 0 ? (
-                            <div 
-                                onClick={() => imagesInputRef.current?.click()} 
-                                className={`h-[calc(100vh-4rem)] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer group ${isDraggingOver ? 'border-orange-500 bg-orange-50' : 'border-slate-300 bg-white hover:border-orange-400 hover:bg-slate-50'}`}
-                            >
-                                <div className="p-6 rounded-full mb-6 bg-slate-50 group-hover:bg-orange-50 transition-colors">
-                                    <Icon name="ImagePlus" size={64} className="text-slate-300 group-hover:text-orange-400 transition-colors" />
-                                </div>
-                                <h2 className="text-2xl font-black text-slate-800 mb-2 uppercase tracking-tight">Panel Vacío</h2>
-                                <p className="text-slate-400 text-sm font-medium mb-8">Arrastre sus fotografías o carpetas aquí para comenzar.</p>
-                                <div className="flex gap-4">
-                                    <button onClick={(e) => { e.stopPropagation(); imagesInputRef.current?.click(); }} className="px-8 py-3 bg-slate-900 text-white rounded-full text-[11px] font-black uppercase tracking-widest border-none cursor-pointer shadow-xl hover:bg-slate-800 transition-all">Seleccionar Imágenes</button>
-                                    <button onClick={(e) => { e.stopPropagation(); folderInputRef.current?.click(); }} className="px-8 py-3 bg-orange-600 text-white rounded-full text-[11px] font-black uppercase tracking-widest border-none cursor-pointer shadow-xl hover:bg-orange-500 transition-all">Cargar Carpeta</button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div id="print-area" className={`flex ${viewMode === 'grid' ? 'flex-row flex-wrap justify-center gap-x-4 gap-y-4' : 'flex-col items-center'}`}>
-                                {Array.from({ length: totalPages }).map((_, pageIndex) => (
-                                    <div 
-                                        key={pageIndex} 
-                                        className="page-wrapper" 
-                                        style={{ 
-                                            width: `${210 * (zoom / 100)}mm`, 
-                                            height: `${297 * (zoom / 100)}mm`, 
-                                            marginBottom: viewMode === 'column' ? '2rem' : '0',
-                                            flexShrink: 0 
-                                        }}
-                                    >
-                                        <div 
-                                            className={`a4-page flex flex-col ${(!showReportHeader && !showReportFooter) ? 'justify-center' : ''}`} 
-                                            style={{ 
-                                                transform: `scale(${zoom / 100})`, 
-                                                transformOrigin: 'top left',
-                                                margin: 0 
-                                            }}
-                                        >
-                                        
-                                        <div className="report-content-layer">
-                                            {showReportHeader && (
-                                                <div className="text-center mb-8 relative">
-                                                    <div className="flex items-center justify-between mb-4 border-b-4 border-double border-slate-900 pb-3">
-                                                        <div className="w-1/4 flex justify-start">
-                                                        </div>
-                                                        <h2 className="italic text-[18pt] font-bold uppercase tracking-tight leading-tight flex-1">{globalTitle}</h2>
-                                                        <div className="w-1/4"></div>
-                                                    </div>
-                                                    {globalHeader.trim() && <div className="bg-slate-900 text-white p-5 text-[10pt] font-mono leading-relaxed border border-slate-900 whitespace-pre-wrap text-center shadow-xl">{globalHeader}</div>}
-                                                </div>
-                                            )}
-
-                                            <div className={`grid ${(!showReportHeader && !showReportFooter) ? 'gap-12 h-[260mm]' : 'gap-6 h-[210mm]'} ${layoutMode === 2 ? 'grid-rows-2' : 'grid-cols-2 grid-rows-2'}`}>
-                                                {photos.slice(pageIndex * layoutMode, (pageIndex + 1) * layoutMode).map((photo, i) => {
-                                                    const globalIndex = pageIndex * layoutMode + i;
-                                                    return (
-                                                        <div 
-                                                            key={photo.id} 
-                                                            draggable="true"
-                                                            onDragStart={(e) => handlePhotoDragStart(e, globalIndex)}
-                                                            onDragOver={(e) => handlePhotoDragOver(e, globalIndex)}
-                                                            onDrop={(e) => handlePhotoDrop(e, globalIndex)}
-                                                            onDragEnd={() => { setDraggedPhotoIndex(null); setDragOverIndex(null); }}
-                                                            className={`photo-card group relative transition-all mx-auto ${layoutMode === 2 ? 'w-[calc(100%-34px)]' : 'w-[calc(100%-30px)]'} ${dragOverIndex === globalIndex ? 'ring-4 ring-orange-500 ring-offset-2 scale-[1.02] z-30' : ''} ${draggedPhotoIndex === globalIndex ? 'opacity-40' : ''}`}
-                                                        >
-                                                            <button onClick={() => removePhoto(photo.id)} className="no-print absolute top-3 right-3 z-10 w-8 h-8 bg-red-600 text-white rounded-full border-none cursor-pointer shadow-lg hover:scale-110 transition-all flex items-center justify-center font-black text-xs opacity-0 group-hover:opacity-100">E</button>
-                                                            <div className="photo-container">
-                                                                <div className="no-print absolute right-1 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-1 bg-slate-900/60 p-1 rounded-lg backdrop-blur-md border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    <button onClick={(e) => { e.stopPropagation(); setPhotos(prev => prev.map(p => p.id === photo.id ? { ...p, rotation: (p.rotation + 90) % 360 } : p)); }} className="edit-btn" title="Rotar 90°">
-                                                                        <div className="w-2.5 h-2.5 rounded-full border-2 border-current"></div>
-                                                                    </button>
-                                                                    <div className="h-[1px] w-full bg-white/10"></div>
-                                                                    <button onClick={(e) => { e.stopPropagation(); setPhotos(prev => prev.map(p => p.id === photo.id ? { ...p, zoom: Math.min(3, p.zoom + 0.1) } : p)); }} className="edit-btn font-black">+</button>
-                                                                    <button onClick={(e) => { e.stopPropagation(); setPhotos(prev => prev.map(p => p.id === photo.id ? { ...p, zoom: Math.max(0.5, p.zoom - 0.1) } : p)); }} className="edit-btn font-black">-</button>
-                                                                    <div className="h-[1px] w-full bg-white/10"></div>
-                                                                    <button onClick={(e) => { e.stopPropagation(); setPhotos(prev => prev.map(p => p.id === photo.id ? { ...p, zoom: 1, rotation: 0, offset: { x: 0, y: 0 } } : p)); }} className="edit-btn font-black" title="Reset">R</button>
-                                                                </div>
-                                                                <div 
-                                                                    className="w-full h-full flex items-center justify-center overflow-hidden cursor-move" 
-                                                                    onMouseDown={(e) => { 
-                                                                        if (e.button !== 0) return;
-                                                                        e.preventDefault(); 
-                                                                        setDraggingId(photo.id); 
-                                                                        setLastMousePos({ x: e.clientX, y: e.clientY }); 
-                                                                    }}
-                                                                >
-                                                                    <img src={photo.url} alt={photo.name} draggable="false" style={{ transform: `translate(${photo.offset.x}px, ${photo.offset.y}px) rotate(${photo.rotation}deg) scale(${photo.zoom})`, transition: draggingId === photo.id ? 'none' : 'transform 0.1s ease-out' }} className="max-w-full max-h-full object-contain" />
-                                                                </div>
-                                                            </div>
-                                                            <div className="photo-footer">
-                                                                <div className="flex items-baseline gap-2">
-                                                                    <span className="img-label">IMG {(globalIndex + 1).toString().padStart(3, '0')}</span>
-                                                                    <div contentEditable suppressContentEditableWarning onBlur={(e) => setPhotos(prev => prev.map(p => p.id === photo.id ? { ...p, name: e.currentTarget.innerText } : p))} className="img-name">{photo.name}</div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-
-                                            {showReportFooter && (
-                                                <div className="absolute bottom-[6px] left-0 right-0 flex justify-between items-center border-t-2 border-slate-900 pt-2">
-                                                    <div contentEditable suppressContentEditableWarning onBlur={(e) => setGlobalFooter(e.currentTarget.innerText)} className="text-[9pt] font-mono text-slate-600 font-bold uppercase tracking-widest outline-none">{globalFooter}</div>
-                                                    <div className="bg-slate-900 text-white px-4 py-1.5 rounded-md text-[9pt] font-black shadow-lg">{pageIndex + 1}/{totalPages}</div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                ))}
-                            </div>
-                        )}
-                    </main>
-
-                    {/* Modal de Importación */}
-                    {isImportModalOpen && (
-                        <div className="modal-overlay no-print">
-                            <div className="modal-content">
-                                <div className="modal-header">
-                                    <div className="flex items-center gap-3">
-                                        <Icon name="Search" size={20} className="text-orange-500" />
-                                        <h3 className="text-sm font-black uppercase tracking-widest">Verificación de Imágenes (Carpeta Seleccionada)</h3>
-                                    </div>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase">{stagedPhotos.length} Archivos Encontrados</span>
-                                </div>
-                                <div className="modal-body">
-                                    <div className="import-grid">
-                                        {stagedPhotos.map((photo, idx) => (
-                                            <div 
-                                                key={photo.id} 
-                                                draggable="true"
-                                                onDragStart={(e) => handleStagedDragStart(e, idx)}
-                                                onDragOver={(e) => handleStagedDragOver(e, idx)}
-                                                onDrop={(e) => handleStagedDrop(e, idx)}
-                                                onDragEnd={() => { setDraggedStagedIndex(null); setDragOverStagedIndex(null); }}
-                                                className={`import-item group relative transition-all ${photo.selected ? 'selected' : 'opacity-50'} ${dragOverStagedIndex === idx ? 'ring-4 ring-orange-500 ring-offset-2 scale-105 z-30' : ''} ${draggedStagedIndex === idx ? 'opacity-30' : ''}`}
-                                            >
-                                                <div className="absolute top-2 right-2 z-20 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print">
-                                                    <button onClick={(e) => { e.stopPropagation(); moveStagedPhoto(idx, -1); }} className="w-6 h-6 bg-slate-900 text-white rounded flex items-center justify-center text-[10px] hover:bg-orange-600 shadow-lg border-none cursor-pointer" title="Mover Izquierda">←</button>
-                                                    <button onClick={(e) => { e.stopPropagation(); moveStagedPhoto(idx, 1); }} className="w-6 h-6 bg-slate-900 text-white rounded flex items-center justify-center text-[10px] hover:bg-orange-600 shadow-lg border-none cursor-pointer" title="Mover Derecha">→</button>
-                                                    <button onClick={(e) => { e.stopPropagation(); removeStagedPhoto(photo.id); }} className="w-6 h-6 bg-red-600 text-white rounded flex items-center justify-center text-[10px] hover:bg-red-700 shadow-lg border-none cursor-pointer" title="Eliminar">E</button>
-                                                </div>
-                                                <div className="cursor-pointer" onClick={() => setStagedPhotos(prev => prev.map(p => p.id === photo.id ? { ...p, selected: !p.selected } : p))}>
-                                                    <img src={photo.url} className="import-thumb" alt="Preview" draggable="false" />
-                                                    <div className="p-2 bg-white">
-                                                        <p className="text-[8px] font-bold text-slate-600 truncate uppercase">{photo.name}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="absolute bottom-2 right-2 pointer-events-none">
-                                                    <div className={`w-4 h-4 rounded-full flex items-center justify-center border ${photo.selected ? 'bg-orange-600 border-orange-600' : 'bg-white border-slate-300'}`}>
-                                                        {photo.selected && <Icon name="Check" size={10} className="text-white" />}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="modal-footer">
-                                    <button onClick={cancelImport} className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-800 transition-colors">Cancelar</button>
-                                    <button onClick={confirmImport} className="px-8 py-2 bg-orange-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-orange-500 transition-all">Confirmar Importación</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
+  document.getElementById('inputProyecto').addEventListener('change',async e=>{
+    const file=e.target.files[0];
+    if(!file) return;
+    try{
+      const zip=await JSZip.loadAsync(file);
+      const txt=await zip.file("proyecto.json").async("text");
+      const p=JSON.parse(txt);
+      membreteGlobal = p.membrete || membreteGlobal;
+      mostrarInfo=p.mostrarInfo??true;
+      mostrarMembreteGlobal=p.mostrarMembreteGlobal??true;
+      mostrarCodigoEnPie=p.mostrarCodigoEnPie??true;
+      mostrarTitulo = p.mostrarTitulo ?? true;
+      baseDatos=JSON.parse(p.baseDatos||"{}");
+      if(p.descripcionesActuales) actualizarDescripciones(p.descripcionesActuales);
+      if(p.piesPersonalizados) piesPersonalizados = p.piesPersonalizados;
+      if(p.tema) aplicarTema(p.tema);
+      carpetas=[];
+      for(const c of p.carpetas){
+        const fotos=[];
+        for(const fi of c.fotos){
+          const blob=await zip.file(`fotos/${c.nombre}/${fi.nombre}`).async("blob");
+          const file=new File([blob],fi.nombre);
+          fotos.push({file,x:fi.x||0,y:fi.y||0,scale:fi.scale||0.5,rotation:fi.rotation||0});
         }
+        carpetas.push({nombre:c.nombre,fotos,nombresFijos:c.nombresFijos});
+      }
+      ["btnInfo","btnMembrete","btnCodigo","btnTitulo"].forEach(id=>
+        document.getElementById(id).classList.toggle('activo',
+          id==="btnInfo"?mostrarInfo:id==="btnMembrete"?mostrarMembreteGlobal:id==="btnCodigo"?mostrarCodigoEnPie:mostrarTitulo));
+      generarPaneles();
+      alert("Proyecto cargado correctamente");
+    }catch(err){alert("Error: "+err.message);}
+  });
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-        
-        // Ocultar loader cuando React esté listo
-        setTimeout(() => {
-            const loader = document.getElementById('loader');
-            if (loader) {
-                loader.style.transition = 'opacity 0.5s ease';
-                loader.style.opacity = '0';
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                }, 500);
-            }
-        }, 1000);
-    </script>
+  function generarPaneles(){
+    const cont=document.getElementById('paneles'); cont.innerHTML='';
+    if(!carpetas.length){ document.getElementById('contador').textContent="0 carpetas • 0 fotos • 0 hojas"; return; }
+    const membrete = membreteGlobal.replace(/\n/g,'<br>');
+    let totalFotos=0, totalHojas=0;
+
+    carpetas.forEach((carpeta,idxC)=>{
+      const porHoja = 4;
+      const hojas = Math.ceil(carpeta.fotos.length / porHoja);
+      totalHojas += hojas; totalFotos += carpeta.fotos.length;
+      const info = baseDatos[carpeta.nombre.toUpperCase()] || {};
+
+      const lineas=[];
+      let l1=`SUMINISTRO: ${carpeta.nombre}`;
+      if(info.usuario?.trim()) l1+=` ── ${info.usuario.trim()}`;
+      lineas.push(`<div>${l1}</div>`);
+      if(info.direccion?.trim()) lineas.push(`<div>DIRECCIÓN: ${info.direccion.trim()}</div>`);
+      let l3=[];
+      if(info.zona?.trim()) l3.push(`ZONA: ${info.zona.trim()}`);
+      const med=[info.tipo,info.nuevo].filter(x=>x?.trim()).join(" ").trim();
+      if(med) l3.push(`MEDIDOR: ${med}`);
+      if(info.categoria?.trim()) l3.push(`CATEGORÍA: ${info.categoria.trim()}`);
+      if(l3.length>0) lineas.push(`<div>${l3.join(" ── ")}</div>`);
+      const infoHTML=lineas.length>0?lineas.join(""):"";
+
+      for(let h=0; h<hojas; h++){
+        const inicio = h * porHoja;
+        const fotosHoja = carpeta.fotos.slice(inicio, inicio + porHoja);
+        const panel = document.createElement('div');
+        panel.className = 'a4';
+        panel.innerHTML = `
+          ${mostrarTitulo ? `<h1>PANEL FOTOGRÁFICO DEL PROYECTO</h1>` : ''}
+          ${mostrarMembreteGlobal ? `<div class="membrete">${membrete}</div>` : ''}
+          ${mostrarInfo && infoHTML ? `<div class="info-bloque">${infoHTML}</div>` : ''}
+          <div class="fotos">
+            ${fotosHoja.map((f,i)=>{
+              const idx = inicio + i;
+              const num = (idx+1).toString().padStart(2,'0');
+              const desc = (carpeta.nombresFijos && idx < carpeta.nombresFijos.length) ? carpeta.nombresFijos[idx] : f.file.name.split('.').slice(0,-1).join('.');
+              const textoPie = piesPersonalizados[`${idxC}-${idx}`] !== undefined 
+                ? piesPersonalizados[`${idxC}-${idx}`]
+                : (mostrarCodigoEnPie ? `IMG. ${num}: Suministro ${carpeta.nombre} - ${desc}` : `IMG. ${num} – ${desc}`);
+              const src = URL.createObjectURL(f.file);
+              return `
+              <div class="foto" draggable="true" data-c="${idxC}" data-i="${idx}">
+                <div class="acciones">
+                  <button class="eliminar" onclick="event.stopPropagation();eliminarFoto(${idxC},${idx})">X</button>
+                  <button class="rotar-izq" onclick="event.stopPropagation();rotar(${idxC},${idx},-90)">↺</button>
+                  <button class="rotar-der" onclick="event.stopPropagation();rotar(${idxC},${idx},90)">↻</button>
+                  <button class="reset" onclick="event.stopPropagation();resetFoto(${idxC},${idx})">↻</button>
+                </div>
+                <div class="foto-contenedor" onwheel="wheel(event,${idxC},${idx})" onmousedown="startDrag(event,${idxC},${idx})">
+                  <img src="${src}" class="foto-img" style="transform:translate(-50%,-50%) translate(${f.x}px,${f.y}px) scale(${f.scale}) rotate(${f.rotation}deg);">
+                </div>
+                <div class="pie" contenteditable="true">${textoPie}</div>
+              </div>`;
+            }).join('')}
+            ${Array(4 - fotosHoja.length).fill('<div class="foto" style="visibility:hidden;"></div>').join('')}
+          </div>`;
+        cont.appendChild(panel);
+      }
+    });
+
+    document.getElementById('contador').textContent=`${carpetas.length} carpetas • ${totalFotos} fotos • ${totalHojas} hojas`;
+  }
+
+  let dragging=false, startX, startY, initX, initY;
+  function startDrag(e,c,i){if(e.button!==0)return;dragging=true;startX=e.clientX;startY=e.clientY;initX=carpetas[c].fotos[i].x;initY=carpetas[c].fotos[i].y;e.preventDefault();}
+  function wheel(e,c,i){e.preventDefault();const d=e.deltaY<0?1.1:0.9;carpetas[c].fotos[i].scale=Math.max(0.2,carpetas[c].fotos[i].scale*d);generarPaneles();}
+  window.addEventListener('mousemove',e=>{if(!dragging)return;const dx=e.clientX-startX;const dy=e.clientY-startY;
+    const f=document.querySelector('.foto:hover');if(f){const c=+f.dataset.c,i=+f.dataset.i;carpetas[c].fotos[i].x=initX+dx;carpetas[c].fotos[i].y=initY+dy;generarPaneles();}});
+  window.addEventListener('mouseup',()=>dragging=false);
+
+  function rotar(c,i,g){carpetas[c].fotos[i].rotation=(carpetas[c].fotos[i].rotation+g+360)%360;generarPaneles();}
+  function resetFoto(c,i){carpetas[c].fotos[i]={file:carpetas[c].fotos[i].file,x:0,y:0,scale:0.5,rotation:0};generarPaneles();}
+  function eliminarFoto(c,i){carpetas[c].fotos.splice(i,1);if(carpetas[c].fotos.length===0)carpetas.splice(c,1);generarPaneles();}
+
+  document.addEventListener('dragstart',e=>{if(e.target.classList.contains('foto'))e.target.classList.add('dragging');});
+  document.addEventListener('dragend',e=>e.target.classList.remove('dragging'));
+  document.addEventListener('dragover',e=>e.preventDefault());
+  document.addEventListener('drop',e=>{
+    e.preventDefault();
+    const src=document.querySelector('.foto.dragging');
+    if(!src)return;
+    const dest=e.target.closest('.foto');
+    if(!dest||src===dest)return;
+    const sc=+src.dataset.c, si=+src.dataset.i, dc=+dest.dataset.c, di=+dest.dataset.i;
+    const foto=carpetas[sc].fotos.splice(si,1)[0];
+    carpetas[dc].fotos.splice(di,0,foto);
+    generarPaneles();
+  });
+
+  function actualizarDescripciones(nuevas) {
+    descripcionesActuales = nuevas;
+    for(let i=1;i<=10;i++) document.getElementById('desc'+i).value = nuevas[i-1] || '';
+    contextMenu.innerHTML = '';
+    nuevas.forEach((txt,i) => {
+      const div = document.createElement('div');
+      div.textContent = `${i+1}. ${txt || 'Descripción '+(i+1)}`;
+      div.onclick = () => {
+        if (!fotoActiva) return;
+        const pie = fotoActiva.querySelector('.pie');
+        const c = +fotoActiva.dataset.c;
+        const idx = +fotoActiva.dataset.i;
+        const suministro = carpetas[c].nombre;
+        const num = (idx+1).toString().padStart(2,'0');
+        const texto = mostrarCodigoEnPie ? `IMG. ${num}: Suministro ${suministro} - ${txt}` : `IMG. ${num} – ${txt}`;
+        pie.textContent = texto;
+        piesPersonalizados[`${c}-${idx}`] = texto;
+        contextMenu.style.display = 'none';
+      };
+      contextMenu.appendChild(div);
+    });
+  }
+
+  document.addEventListener('input', e => {
+    if (e.target.classList.contains('pie')) {
+      const foto = e.target.closest('.foto');
+      if (!foto) return;
+      const c = +foto.dataset.c;
+      const i = +foto.dataset.i;
+      piesPersonalizados[`${c}-${i}`] = e.target.textContent.trim();
+    }
+  });
+
+  document.addEventListener('contextmenu', e => {
+    const foto = e.target.closest('.foto');
+    if (!foto) return;
+    e.preventDefault();
+    fotoActiva = foto;
+    contextMenu.style.display = 'block';
+    contextMenu.style.left = e.pageX + 'px';
+    contextMenu.style.top = e.pageY + 'px';
+  });
+  document.addEventListener('click', () => contextMenu.style.display = 'none');
+
+  actualizarDescripciones(descripcionesActuales);
+  generarPaneles();
+</script>
 </body>
 </html>
