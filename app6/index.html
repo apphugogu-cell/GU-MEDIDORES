@@ -68,6 +68,12 @@
 
     .fotos { flex:1; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap: 4mm; padding-top: 2mm; }
     .foto:nth-child(3) { grid-column: span 2; }
+    .foto:nth-child(3) .foto-img {
+      width: 100% !important;
+      height: auto !important;
+      top: auto !important;
+      bottom: 0 !important;
+    }
     .foto { 
       position: relative; 
       border: var(--grosor-borde-fotos) solid var(--color-borde-fotos); 
@@ -179,6 +185,7 @@
     <button class="btn-pro btn-azul activo" id="btnInfo">Información</button>
     <button class="btn-pro btn-azul" id="btnMembrete">Membrete</button>
     <button class="btn-pro btn-azul activo" id="btnTitulo">Título</button>
+    <button class="btn-pro btn-azul" id="btnPagina">N° Página</button>
   </div>
 
   <div class="tool-card">
@@ -413,6 +420,7 @@
   let mostrarInfo = true;
   let mostrarMembreteGlobal = false;
   let mostrarTitulo = true;
+  let mostrarPagina = false;
   let plantillasDescripciones = [];
   let descripcionesActuales = [
     "Antes de la instalación","Medidor retirado","Medidor instalado","Lectura inicial",
@@ -456,6 +464,7 @@
   document.getElementById('btnInfo').onclick = () => { mostrarInfo=!mostrarInfo; document.getElementById('btnInfo').classList.toggle('activo'); generarPaneles(); };
   document.getElementById('btnMembrete').onclick = () => { mostrarMembreteGlobal=!mostrarMembreteGlobal; document.getElementById('btnMembrete').classList.toggle('activo'); generarPaneles(); };
   document.getElementById('btnTitulo').onclick = () => { mostrarTitulo=!mostrarTitulo; document.getElementById('btnTitulo').classList.toggle('activo'); generarPaneles(); };
+  document.getElementById('btnPagina').onclick = () => { mostrarPagina=!mostrarPagina; document.getElementById('btnPagina').classList.toggle('activo'); generarPaneles(); };
   document.getElementById('btnNombrar').onclick = () => document.getElementById('modalNombres').style.display='flex';
   document.getElementById('btnTemas').onclick = () => { document.getElementById('modalTemas').style.display='flex'; aplicarTema(); };
   document.getElementById('btnZip').onclick = () => document.getElementById('inputZip').click();
@@ -796,7 +805,7 @@
       version:"1.5",
       fecha:new Date().toISOString(),
       membrete: membreteGlobal,
-      mostrarInfo, mostrarMembreteGlobal, mostrarTitulo,
+      mostrarInfo, mostrarMembreteGlobal, mostrarTitulo, mostrarPagina,
       baseDatos:JSON.stringify(baseDatos),
       descripcionesActuales,
       piesPersonalizados,
@@ -836,6 +845,7 @@
       mostrarInfo=p.mostrarInfo??true;
       mostrarMembreteGlobal=p.mostrarMembreteGlobal??true;
       mostrarTitulo = p.mostrarTitulo ?? true;
+      mostrarPagina = p.mostrarPagina ?? false;
       baseDatos=JSON.parse(p.baseDatos||"{}");
       if(p.descripcionesActuales) actualizarDescripciones(p.descripcionesActuales);
       if(p.piesPersonalizados) piesPersonalizados = p.piesPersonalizados;
@@ -853,9 +863,10 @@
         }
         carpetas.push({nombre:c.nombre,fotos,nombresFijos:c.nombresFijos});
       }
-      ["btnInfo","btnMembrete","btnTitulo"].forEach(id=>
-        document.getElementById(id).classList.toggle('activo',
-          id==="btnInfo"?mostrarInfo:id==="btnMembrete"?mostrarMembreteGlobal:mostrarTitulo));
+      ["btnInfo","btnMembrete","btnTitulo","btnPagina"].forEach(id=> {
+        const val = id==="btnInfo"?mostrarInfo:id==="btnMembrete"?mostrarMembreteGlobal:id==="btnTitulo"?mostrarTitulo:mostrarPagina;
+        document.getElementById(id).classList.toggle('activo', val);
+      });
       generarPaneles();
       alert("Proyecto cargado correctamente");
     }catch(err){alert("Error: "+err.message);}
@@ -935,6 +946,8 @@
               }
 
               const src = URL.createObjectURL(f.file);
+              const esAbajo = (i === 2);
+              const transformBase = esAbajo ? "translate(-50%,0)" : "translate(-50%,-50%)";
               return `
               <div class="foto" draggable="${!bloqueada}" data-c="${idxC}" data-i="${idx}" data-pagina="${paginaId}">
                 <div class="acciones" style="${bloqueada ? 'display:none' : ''}">
@@ -944,7 +957,7 @@
                   <button class="reset" onclick="event.stopPropagation();resetFoto(${idxC},${idx})">↻</button>
                 </div>
                 <div class="foto-contenedor" onwheel="${!bloqueada ? `wheel(event,${idxC},${idx})` : ''}" onmousedown="${!bloqueada ? `startDrag(event,${idxC},${idx})` : ''}" style="pointer-events:${bloqueada ? 'none' : 'auto'}">
-                  <img src="${src}" class="foto-img" style="transform:translate(-50%,-50%) translate(${f.x}px,${f.y}px) scale(${f.scale}) rotate(${f.rotation}deg);">
+                  <img src="${src}" class="foto-img" style="transform:${transformBase} translate(${f.x}px,${f.y}px) scale(${f.scale}) rotate(${f.rotation}deg);">
                 </div>
               </div>`;
             }).join('')}
@@ -952,11 +965,13 @@
           </div>
           ${mostrarInfo && infoHTML ? `<div class="info-bloque">${infoHTML}</div>` : ''}`;
 
-        const numeroPagina = totalHojasAnterior + h + 1;
-        const paginacion = document.createElement('div');
-        paginacion.className = 'paginacion';
-        paginacion.textContent = `PÁG. ${numeroPagina}`;
-        panel.appendChild(paginacion);
+        if (mostrarPagina) {
+          const numeroPagina = totalHojasAnterior + h + 1;
+          const paginacion = document.createElement('div');
+          paginacion.className = 'paginacion';
+          paginacion.textContent = `PÁG. ${numeroPagina}`;
+          panel.appendChild(paginacion);
+        }
 
         cont.appendChild(panel);
       }
