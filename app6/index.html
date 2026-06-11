@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>G-URALMO | PF2 2025</title>
+  <title>G-URALMO | PF2 2025 - Panel Fotográfico</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -12,9 +12,10 @@
   <style>
     :root {
       --primario:#0B2B5A; --secundario:#E63946; --acento:#FFD60A; --gris:#f8f9fc; --sombra:0 15px 40px rgba(11,43,90,0.18);
-      --color-borde-a4:#0066cc; --color-fondo-a4:white; --color-titulo-linea:#0066cc; --grosor-borde-a4:6px; --grosor-linea-titulo:6px;
+      --color-borde-a4:#0066cc; --grosor-borde-a4:4px; --color-titulo-linea:#0066cc; --grosor-linea-titulo:6px;
       --fondo-imagen-a4:none; --opacidad-fondo-imagen:0.15; --color-membrete-bg:#003366; --color-membrete-texto:white;
       --color-info-bg:#f8fbff; --color-info-texto:#003366; --color-pie-bg-start:#99ccff; --color-pie-bg-end:#66b3ff; --color-pie-texto:#003366;
+      --color-borde-fotos:#0066cc; --grosor-borde-fotos:6px;
     }
     * { box-sizing:border-box; margin:0; padding:0; }
     body { font-family:'Roboto',sans-serif; background:linear-gradient(135deg,#e6f0ff 0%,#d0e2ff 100%); color:#2d3436; }
@@ -38,94 +39,66 @@
     .btn-pro.activo { background:linear-gradient(135deg,#ffd60a,var(--acento)); color:var(--primario); }
     .contador-pro { text-align:center; font-size:0.8rem; font-weight:900; color:var(--primario); padding:10px; background:white; margin:0 70px 50px; border-radius:24px; border-top:12px solid var(--secundario); box-shadow:var(--sombra); }
 
-    /* Vista previa: 2 hojas al lado */
-    #paneles {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 50px;
-      padding: 30px;
-      max-width: 1500px;
-      margin: 0 auto;
-    }
-    @media (max-width: 1450px) {
-      #paneles { grid-template-columns: 1fr; gap: 40px; }
-    }
+    #paneles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 50px; padding: 30px; max-width: 1500px; margin: 0 auto; }
+    @media (max-width: 1450px) { #paneles { grid-template-columns: 1fr; gap: 40px; } }
 
     .a4 {
-      width:210mm;
-      min-height:297mm;
-      background:var(--color-fondo-a4);
-      padding:14mm 12mm 10mm 12mm;
-      border:var(--grosor-borde-a4) solid var(--color-borde-a4);
-      box-shadow:0 0 40px rgba(0,50,100,.3);
-      page-break-after:always;
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-      position:relative;
+      width: 210mm;
+      height: 297mm;
+      background: white;
+      padding: 14mm 12mm 25mm 12mm;
+      border: var(--grosor-borde-a4) solid var(--color-borde-a4);
+      box-shadow: 0 0 40px rgba(0,50,100,.3);
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
       break-inside: avoid;
+      box-sizing: border-box;
+      margin: 0 auto;
+      transform-origin: top left;
     }
     .a4::before { content:''; position:absolute; inset:0; background:var(--fondo-imagen-a4); background-size:cover; background-position:center; opacity:var(--opacidad-fondo-imagen); pointer-events:none; z-index:0; }
     .a4 > * { position:relative; z-index:1; }
-    .a4 h1 { font-size:19pt; text-align:center; margin:0 0 8mm; padding-bottom:6mm; border-bottom:var(--grosor-linea-titulo) double var(--color-titulo-linea); font-weight:900; color:#003366; flex-shrink:0; }
-    .membrete, .info-bloque { width:186mm; margin:0 auto 1.5mm; padding:2px; border-radius:10px; text-align:center; font-weight:bold; flex-shrink:0; }
-    .membrete { background:var(--color-membrete-bg); color:var(--color-membrete-texto); border:3px solid var(--color-borde-a4); font-size:10.5pt; line-height:1.4; }
-    .info-bloque { background:var(--color-info-bg); color:var(--color-info-texto); border:3px solid var(--color-borde-a4); font-size:10.8pt; line-height:1.5; box-shadow:0 4px 15px rgba(0,100,200,.2); }
+    .a4 h1 { font-size:19pt; text-align:center; margin:0 0 2mm; padding-bottom:2mm; border-bottom:var(--grosor-linea-titulo) double var(--color-titulo-linea); font-weight:900; color:#003366; flex-shrink:0; }
+    .membrete, .info-bloque { width:186mm; margin:0 auto 2mm; padding:2px; border-radius:10px; text-align:center; font-weight:bold; flex-shrink:0; }
+    .membrete { background:var(--color-membrete-bg); color:var(--color-membrete-texto); border:3px solid #0066cc; font-size:10.5pt; line-height:1.4; }
+    .info-bloque { background:var(--color-info-bg); color:var(--color-info-texto); border:3px solid #0066cc; font-size:10.8pt; line-height:1.5; box-shadow:0 4px 15px rgba(0,100,200,.2); }
 
-    /* 4 fotos por hoja en cuadrícula 2x2 */
-    .fotos {
-      flex:1;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: repeat(2, 1fr);
-      gap: 6mm;
-      padding-top: 4mm;
+    .fotos { flex:1; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap: 4mm; padding-top: 2mm; }
+    .foto:nth-child(3) { grid-column: span 2; }
+    .foto { 
+      position: relative; 
+      border: var(--grosor-borde-fotos) solid var(--color-borde-fotos); 
+      border-radius: 12px; 
+      overflow: hidden; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+      background: white; 
     }
-    .foto {
-      position: relative;
-      border: 6px solid var(--color-borde-a4);
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      background: white;
-    }
-    .foto-contenedor {
-      width: 100%;
-      height: calc(100% - 48px);
-      overflow: hidden;
-      position: relative;
-      background: white;
-    }
-    .foto-img {
-      max-width: none;
-      max-height: none;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%,-50%);
-      user-select: none;
-      pointer-events: none;
-    }
-    .pie {
-      background: linear-gradient(135deg, var(--color-pie-bg-start), var(--color-pie-bg-end));
-      border-top: 4px solid var(--color-borde-a4);
-      height: 48px;
-      padding: 0 12px;
-      font-weight: 900;
-      font-size: 9pt;
-      color: var(--color-pie-texto);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-    }
+    .foto-contenedor { width: 100%; height: 100%; overflow: hidden; position: relative; background: white; }
+    .foto-img { height: 100%; width: auto; max-width: none; max-height: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); user-select: none; pointer-events: none; }
+    .pie { display: none; }
 
     .acciones { position:absolute; top:8px; right:8px; display:flex; gap:8px; opacity:0; transition:0.3s; z-index:10; }
     .foto:hover .acciones { opacity:1; }
     .acciones button { width:38px; height:38px; border:none; border-radius:50%; color:white; font-size:18px; cursor:pointer; box-shadow:0 4px 12px #0006; }
     .eliminar { background:#e74c3c; } .rotar-izq { background:#f39c12; } .rotar-der { background:#3498db; } .reset { background:#9b59b6; }
+
+    .paginacion {
+      position: absolute;
+      bottom: 8mm;
+      right: 12mm;
+      font-size: 10pt;
+      font-weight: 900;
+      color: #003366;
+      z-index: 2;
+      background: white;
+      padding: 4px 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      border: 2px solid #0066cc;
+    }
 
     #contextMenu { position:absolute; background:white; border:3px solid #0066cc; border-radius:12px; box-shadow:0 10px 30px #0004; z-index:100000; padding:8px 0; display:none; min-width:340px; font-weight:bold; }
     .modal { display:none; position:fixed; inset:0; background:rgba(0,50,100,.97); z-index:10000; justify-content:center; align-items:center; backdrop-filter:blur(5px); }
@@ -135,13 +108,33 @@
     th { background:var(--primario); color:white; font-weight:900; }
     .btn-descargar-pdf { background:linear-gradient(135deg,#c1121f,#e63946); font-size:1.1rem; padding:12px 0; margin-top:25px; width:100%; border-radius:16px; box-shadow:0 8px 25px rgba(0,0,0,0.4); }
 
+    .color-row { display:flex; justify-content:space-between; align-items:center; margin:2px 0; }
+    .color-row label { font-weight:600; color:#003366; flex:1; font-size: 13px}
+    .color-row input[type="color"] { width:80px; height:20px; border:none; border-radius:8px; cursor:pointer; }
+    .color-row input[type="range"] { width:120px; }
+    .color-row input[type="checkbox"] { transform:scale(1.5); cursor:pointer; }
+    .modal-content h3 { margin:20px 0 10px; color:var(--primario); border-bottom:2px solid var(--acento); padding-bottom:1px; }
+
     @media print {
-      @page { size:A4 portrait; margin:0; }
-      body { background:white; padding:0; }
-      .header-pro,.toolbar-pro,.contador-pro,.modal,.acciones,.btn-pro,#contextMenu { display:none !important; }
-      #paneles { display:block; }
-      .a4 { margin:0 !important; padding:14mm 12mm 10mm 12mm !important; border:var(--grosor-borde-a4) solid var(--color-borde-a4) !important; box-shadow:none !important; page-break-after:always; height:297mm !important; overflow:hidden; }
-      * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+      @page { size: A4 portrait; margin: 0; }
+      body { background: white !important; margin: 0 !important; padding: 0 !important; }
+      .header-pro, .toolbar-pro, .contador-pro, .modal, .acciones, .btn-pro, #contextMenu, .bloqueo-pagina { display: none !important; }
+      #paneles { display: block !important; padding:0 !important; margin:0 !important; }
+      .a4 {
+        margin: 0 !important;
+        padding: 14mm 12mm 25mm 12mm !important;
+        box-shadow: none !important;
+        page-break-after: always !important;
+        height: 297mm !important;
+        width: 210mm !important;
+        box-sizing: border-box !important;
+        border: var(--grosor-borde-a4) solid var(--color-borde-a4) !important;
+        overflow: hidden !important;
+        position: relative !important;
+        break-inside: avoid !important;
+        transform: none !important;
+      }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     }
   </style>
 </head>
@@ -178,13 +171,13 @@
     <div class="card-title">Edición Rápida</div>
     <button class="btn-pro btn-amarillo" id="btnNombrar">10 Descripciones Personalizadas</button>
     <button class="btn-pro btn-amarillo" id="btnEditarMembrete">Editar Membrete</button>
+    <button class="btn-pro btn-amarillo activo" id="btnCodigo">Formato del Pie</button>
   </div>
 
   <div class="tool-card">
     <div class="card-title">Visibilidad</div>
     <button class="btn-pro btn-azul activo" id="btnInfo">Información</button>
-    <button class="btn-pro btn-azul activo" id="btnMembrete">Membrete</button>
-    <button class="btn-pro btn-azul activo" id="btnCodigo">Código en Pie</button>
+    <button class="btn-pro btn-azul" id="btnMembrete">Membrete</button>
     <button class="btn-pro btn-azul activo" id="btnTitulo">Título</button>
   </div>
 
@@ -203,6 +196,7 @@
     <div class="card-title">Índice / Exportar</div>
     <button class="btn-pro btn-ver42" id="btnGenerarIndice">Generar Índice</button>
     <button class="btn-pro btn-azul" id="btnImprimir">PDF / Imprimir</button>
+    <button class="btn-pro btn-rojo" id="btnDescargarPDFDirecto">Descargar PDF</button>
     <button class="btn-pro btn-rojo" id="btnLimpiar">Limpiar</button>
   </div>
 </div>
@@ -211,7 +205,7 @@
 <div id="paneles"></div>
 <div id="contextMenu"></div>
 
-<!-- MODAL MEMBRETE -->
+<!-- MODALES -->
 <div id="modalMembrete" class="modal">
   <div class="modal-content">
     <h2 style="text-align:center;color:var(--primario);margin-bottom:20px;">EDITAR MEMBRETE CORPORATIVO</h2>
@@ -223,52 +217,130 @@
   </div>
 </div>
 
-<!-- MODAL ÍNDICE CON DESCARGA PDF -->
 <div id="modalIndice" class="modal">
   <div class="modal-content">
     <h2 style="text-align:center;color:var(--primario);margin-bottom:20px;">ÍNDICE DE SUMINISTROS</h2>
     <div id="contenidoIndice" style="text-align:center;color:#666;">Presiona "Generar Índice" para ver la tabla.</div>
-    <button class="btn-pro btn-descargar-pdf" id="btnDescargarPDF">Descargar Índice como PDF</button>
+    <button class="btn-pro btn-descargar-pdf" id="btnDescargarPDF">Descargar como PDF</button>
+    <button class="btn-pro btn-ver42" id="btnDescargarExcel" style="margin-top:10px;">Descargar como Excel</button>
     <div style="text-align:right;margin-top:20px;">
       <button class="btn-pro btn-rojo" onclick="document.getElementById('modalIndice').style.display='none'">Cerrar</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL TEMAS -->
 <div id="modalTemas" class="modal">
-  <div class="modal-content">
-    <h2 style="text-align:center;color:var(--primario);margin-bottom:20px;">TEMAS Y COLORES</h2>
-    <div class="color-row"><label>Borde de hoja A4</label><input type="color" id="colorBordeA4" value="#0066cc"></div>
-    <div class="color-row"><label>Grosor borde (px)</label><input type="range" min="1" max="20" value="6" id="grosorBordeA4"></div>
-    <div class="color-row"><label>Fondo de hoja</label><input type="color" id="colorFondoA4" value="#ffffff"></div>
-    <div class="color-row"><label>Línea bajo título</label><input type="color" id="colorLineaTitulo" value="#0066cc"></div>
-    <div class="color-row"><label>Grosor línea título (px)</label><input type="range" min="1" max="15" value="6" id="grosorLineaTitulo"></div>
-    <div class="color-row"><label>Fondo membrete</label><input type="color" id="colorMembreteBg" value="#003366"></div>
-    <div class="color-row"><label>Texto membrete</label><input type="color" id="colorMembreteTexto" value="#ffffff"></div>
-    <div class="color-row"><label>Fondo bloque info</label><input type="color" id="colorInfoBg" value="#f8fbff"></div>
-    <div class="color-row"><label>Texto bloque info</label><input type="color" id="colorInfoTexto" value="#003366"></div>
-    <div class="color-row"><label>Pie de foto (inicio)</label><input type="color" id="colorPieStart" value="#99ccff"></div>
-    <div class="color-row"><label>Pie de foto (fin)</label><input type="color" id="colorPieEnd" value="#66b3ff"></div>
-    <div class="color-row"><label>Texto pie de foto</label><input type="color" id="colorPieTexto" value="#003366"></div>
+  <div class="modal-content" style="max-width:1100px; width:95%; max-height:95vh; padding:20px;">
+    <h2 style="text-align:center; color:var(--primario); margin-bottom:1px;">TEMAS Y COLORES</h2>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:50px;">
+      <div>
+        <h3 style="margin-top:0; color:var(--primario);">Borde Exterior y Grosor</h3>
+        <div class="color-row">
+          <label>Mostrar marco A4</label>
+          <input type="checkbox" id="mostrarMarcoA4" checked>
+        </div>
+        <div class="color-row">
+          <label>Color borde hoja</label>
+          <input type="color" id="colorBordeA4" value="#0066cc">
+        </div>
+        <div class="color-row">
+          <label>Grosor borde (px)</label>
+          <input type="range" min="1" max="20" value="4" id="grosorBordeA4">
+          <span id="valGrosorBorde">4</span>
+        </div>
 
-    <div style="margin:25px 0;padding:15px;background:#f0f0f0;border-radius:12px;">
-      <label style="display:block;margin-bottom:10px;font-weight:600;">Imagen de fondo (marca de agua)</label>
-      <input type="file" accept="image/*" id="inputFondoImagen">
-      <div style="margin-top:10px;">
-        <label>Opacidad: <span id="valOpacidad">15</span>%</label>
-        <input type="range" min="0" max="100" value="15" id="opacidadFondo">
+        <h3 style="margin-top:20px; color:var(--primario);">Bordes Internos (Fotos)</h3>
+        <div class="color-row">
+          <label>Color borde fotos</label>
+          <input type="color" id="colorBordeFotos" value="#0066cc">
+        </div>
+        <div class="color-row">
+          <label>Grosor borde fotos (px)</label>
+          <input type="range" min="1" max="15" value="6" id="grosorBordeFotos">
+          <span id="valGrosorBordeFotos">6</span>
+        </div>
+
+        <h3 style="margin-top:20px; color:var(--primario);">Línea del Título</h3>
+        <div class="color-row">
+          <label>Color línea título</label>
+          <input type="color" id="colorLineaTitulo" value="#0066cc">
+        </div>
+        <div class="color-row">
+          <label>Grosor línea título (px)</label>
+          <input type="range" min="1" max="15" value="6" id="grosorLineaTitulo">
+          <span id="valGrosorLinea">6</span>
+        </div>
+
+        <h3 style="margin-top:20px; color:var(--primario);">Membrete, Info y Pie</h3>
+        <div class="color-row">
+          <label>Fondo membrete</label>
+          <input type="color" id="colorMembreteBg" value="#003366">
+        </div>
+        <div class="color-row">
+          <label>Texto membrete</label>
+          <input type="color" id="colorMembreteTexto" value="#ffffff">
+        </div>
+        <div class="color-row">
+          <label>Fondo bloque info</label>
+          <input type="color" id="colorInfoBg" value="#f8fbff">
+        </div>
+        <div class="color-row">
+          <label>Texto bloque info</label>
+          <input type="color" id="colorInfoTexto" value="#003366">
+        </div>
+        <div class="color-row">
+          <label>Pie (inicio)</label>
+          <input type="color" id="colorPieStart" value="#99ccff">
+        </div>
+        <div class="color-row">
+          <label>Pie (fin)</label>
+          <input type="color" id="colorPieEnd" value="#66b3ff">
+        </div>
+        <div class="color-row">
+          <label>Texto pie</label>
+          <input type="color" id="colorPieTexto" value="#003366">
+        </div>
+
+        <div style="margin-top:20px; padding:20px; background:#f0f0f0; border-radius:10px;">
+          <label style="display:block; margin-bottom:8px; font-weight:600;">Marca de agua / Fondo de hoja (opcional)</label>
+          <input type="file" accept="image/*" id="inputFondoImagen">
+          <div style="margin-top:10px;">
+            <label>Opacidad: <span id="valOpacidad">15</span>%</label>
+            <input type="range" min="0" max="100" value="15" id="opacidadFondo">
+          </div>
+          <button class="btn-pro btn-rojo" style="margin-top:10px; width:100%; font-size:0.9rem;" onclick="document.getElementById('inputFondoImagen').value='';aplicarTema({fondoImagen:'none'})">Quitar marca de agua</button>
+        </div>
       </div>
-      <button class="btn-pro btn-rojo" style="margin-top:10px;width:100%;" onclick="document.getElementById('inputFondoImagen').value='';aplicarTema({fondoImagen:'none'})">Quitar imagen de fondo</button>
+
+      <div style="display:flex; flex-direction:column; align-items:center; background:#eee; border-radius:12px; padding:15px;">
+        <h3 style="margin:0 0 10px 0; color:var(--primario);">Previsualización</h3>
+        <div id="previewA4" class="a4" style="width:210mm; height:297mm; max-width:90%; max-height:90vh; transform:scale(.8); transform-origin:top left; overflow:hidden; box-shadow:0 10px 10px rgba(0,0,0,0.3);">
+          <h1 style="font-size:19pt; text-align:center; margin:0 0 8mm; padding-bottom:6mm; border-bottom:var(--grosor-linea-titulo) double var(--color-titulo-linea); color:#003366;">PANEL FOTOGRÁFICO DEL PROYECTO</h1>
+          <div class="membrete" style="background:var(--color-membrete-bg); color:var(--color-membrete-texto);">Adquisición de Medidor de Corriente de Agua - CUI 2574429</div>
+          <div class="fotos">
+            <div class="foto" style="border: var(--grosor-borde-fotos) solid var(--color-borde-fotos);">
+              <div class="foto-contenedor"><img src="https://i.ibb.co/5Y2n7PZ/engineer-boy.png" class="foto-img" style="transform:translate(-50%,-50%) scale(0.8);"></div>
+            </div>
+            <div class="foto" style="border: var(--grosor-borde-fotos) solid var(--color-borde-fotos);">
+              <div class="foto-contenedor"><img src="https://i.ibb.co/5Y2n7PZ/engineer-boy.png" class="foto-img" style="transform:translate(-50%,-50%) scale(0.8);"></div>
+            </div>
+            <div class="foto" style="border: var(--grosor-borde-fotos) solid var(--color-borde-fotos);">
+              <div class="foto-contenedor"><img src="https://i.ibb.co/5Y2n7PZ/engineer-boy.png" class="foto-img" style="transform:translate(-50%,-50%) scale(0.8);"></div>
+            </div>
+          </div>
+          <div class="info-bloque" style="background:var(--color-info-bg); color:var(--color-info-texto);">
+            SUMINISTRO: 123456 – USUARIO: JUAN PEREZ<br>DIRECCIÓN: Av. Principal 123 – ZONA: Centro<br>MEDIDOR: Nuevo – CATEGORÍA: Residencial
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div style="text-align:right;margin-top:30px;">
-      <button class="btn-pro btn-rojo" onclick="document.getElementById('modalTemas').style.display='none'">Cerrar</button>
+    <div style="text-align:right; margin-top:10px;">
+      <button class="btn-pro btn-rojo" style="margin-right:10px;" onclick="document.getElementById('modalTemas').style.display='none'">Cerrar</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL NOMBRES -->
 <div id="modalNombres" class="modal">
   <div class="modal-content">
     <h3>10 Descripciones Personalizadas</h3>
@@ -297,6 +369,40 @@
   </div>
 </div>
 
+<div id="modalFormatoPie" class="modal">
+  <div class="modal-content">
+    <h2 style="text-align:center;color:var(--primario);margin-bottom:20px;">FORMATO DEL PIE DE FOTO</h2>
+    <p style="text-align:center;color:#555;margin-bottom:20px;">Elige cómo se mostrará el texto en el pie de cada fotografía</p>
+
+    <div style="display:flex;flex-direction:column;gap:15px;max-width:600px;margin:0 auto;">
+      <label style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px;background:#f8fbff;border-radius:12px;border:2px solid #ddd;">
+        <input type="radio" name="formatoPie" value="conSuministro" checked>
+        <span><strong>IMG. 01:</strong> Suministro 123456 Fachada de la Vivienda del usuario</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px;background:#f8fbff;border-radius:12px;border:2px solid #ddd;">
+        <input type="radio" name="formatoPie" value="soloImg">
+        <span><strong>IMG. 01</strong> Fachada de la Vivienda del usuario</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px;background:#f8fbff;border-radius:12px;border:2px solid #ddd;">
+        <input type="radio" name="formatoPie" value="prefijoPersonalizado">
+        <span><strong>IMG. 01 "Prefijo"</strong> Fachada de la Vivienda del usuario</span>
+      </label>
+      <div id="contenedorPrefijo" style="margin-left:40px;margin-top:-10px;display:none;">
+        <input type="text" id="prefijoPersonalizado" placeholder='Ejemplo: "Suministro 123456"' style="width:100%;padding:10px;border-radius:8px;border:2px solid var(--acento);">
+      </div>
+      <label style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px;background:#f8fbff;border-radius:12px;border:2px solid #ddd;">
+        <input type="radio" name="formatoPie" value="ocultar">
+        <span>Solo la descripción (sin código ni suministro)</span>
+      </label>
+    </div>
+
+    <div style="text-align:right;margin-top:30px;">
+      <button class="btn-pro btn-rojo" style="margin-right:10px;" onclick="document.getElementById('modalFormatoPie').style.display='none'">Cancelar</button>
+      <button class="btn-pro btn-azul" onclick="aplicarFormatoPie()">Aplicar a Todo</button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="inputZip" accept=".zip" style="display:none;">
 <input type="file" id="inputProyecto" accept=".guralmo" style="display:none;">
 
@@ -305,8 +411,7 @@
   let baseDatos = {};
   let membreteGlobal = "Adquisición de Medidor de Corriente de Agua; en el Parque de Medidores de la EPS SEDALIB S.A y Ampliación de Cobertura de Micromedición - Provincias de Trujillo, Ascope, Chepén y el Distrito de Trujillo, Provincia Trujillo, Departamento La Libertad - Segunda Etapa con CUI N° 2574429";
   let mostrarInfo = true;
-  let mostrarMembreteGlobal = true;
-  let mostrarCodigoEnPie = true;
+  let mostrarMembreteGlobal = false;
   let mostrarTitulo = true;
   let plantillasDescripciones = [];
   let descripcionesActuales = [
@@ -314,22 +419,90 @@
     "Sellos colocados","Tapa colocada","Caja cerrada","Vista general","Detalle medidor","Ubicación en calle"
   ];
   let piesPersonalizados = {};
-
+  let formatoPie = "conSuministro";
+  let prefijoPersonalizado = "";
+  let paginasBloqueadas = {};
   const contextMenu = document.getElementById('contextMenu');
   let fotoActiva = null;
 
+  function decodificarNombreArchivo(nombre) {
+    try {
+      return decodeURIComponent(escape(nombre));
+    } catch (e) {
+      return name;
+    }
+  }
+
+  function obtenerFechaExcel(v) {
+    if (!v) return "";
+    if (v instanceof Date) {
+      const d = ("0" + v.getDate()).slice(-2);
+      const m = ("0" + (v.getMonth() + 1)).slice(-2);
+      const y = v.getFullYear();
+      return `${d}/${m}/${y}`;
+    }
+    const num = Number(v);
+    if (!isNaN(num) && num > 10000 && num < 60000) {
+      const utcDate = new Date(Math.round((num - 25569) * 86400 * 1000));
+      const date = new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60 * 1000);
+      const d = ("0" + date.getDate()).slice(-2);
+      const m = ("0" + (date.getMonth() + 1)).slice(-2);
+      const y = date.getFullYear();
+      return `${d}/${m}/${y}`;
+    }
+    return String(v).trim();
+  }
+
   document.getElementById('btnInfo').onclick = () => { mostrarInfo=!mostrarInfo; document.getElementById('btnInfo').classList.toggle('activo'); generarPaneles(); };
   document.getElementById('btnMembrete').onclick = () => { mostrarMembreteGlobal=!mostrarMembreteGlobal; document.getElementById('btnMembrete').classList.toggle('activo'); generarPaneles(); };
-  document.getElementById('btnCodigo').onclick = () => { mostrarCodigoEnPie=!mostrarCodigoEnPie; document.getElementById('btnCodigo').classList.toggle('activo'); generarPaneles(); };
   document.getElementById('btnTitulo').onclick = () => { mostrarTitulo=!mostrarTitulo; document.getElementById('btnTitulo').classList.toggle('activo'); generarPaneles(); };
   document.getElementById('btnNombrar').onclick = () => document.getElementById('modalNombres').style.display='flex';
-  document.getElementById('btnTemas').onclick = () => document.getElementById('modalTemas').style.display='flex';
+  document.getElementById('btnTemas').onclick = () => { document.getElementById('modalTemas').style.display='flex'; aplicarTema(); };
   document.getElementById('btnZip').onclick = () => document.getElementById('inputZip').click();
   document.getElementById('btnImprimir').onclick = () => window.print();
   document.getElementById('btnLimpiar').onclick = () => confirm("¿Borrar todo?") && location.reload();
   document.getElementById('btnEditarMembrete').onclick = () => { document.getElementById('membreteTextarea').value = membreteGlobal; document.getElementById('modalMembrete').style.display = 'flex'; };
   document.getElementById('btnGenerarIndice').onclick = generarIndice;
   document.getElementById('btnCargar').onclick = () => document.getElementById('inputProyecto').click();
+  document.getElementById('btnCodigo').onclick = () => {
+    document.getElementById('modalFormatoPie').style.display = 'flex';
+    document.querySelector(`input[name="formatoPie"][value="${formatoPie}"]`).checked = true;
+    document.getElementById('contenedorPrefijo').style.display = formatoPie === 'prefijoPersonalizado' ? 'block' : 'none';
+    document.getElementById('prefijoPersonalizado').value = prefijoPersonalizado;
+  };
+
+  document.getElementById('btnDescargarPDFDirecto').onclick = async () => {
+    if (carpetas.length === 0) { alert("No hay fotos cargadas."); return; }
+    const toolbar = document.querySelector('.toolbar-pro');
+    const header = document.querySelector('.header-pro');
+    const contador = document.querySelector('.contador-pro');
+    const paneles = document.getElementById('paneles');
+    const estadoOriginal = { toolbar: toolbar.style.display, header: header.style.display, contador: contador.style.display, grid: paneles.style.gridTemplateColumns };
+    toolbar.style.display = 'none'; header.style.display = 'none'; contador.style.display = 'none'; paneles.style.gridTemplateColumns = '1fr';
+    const fecha = new Date().toISOString().slice(0,10);
+    const nombreArchivo = `Panel_Fotografico_PF2_2025_${fecha}.pdf`;
+    const opt = { margin: 0, filename: nombreArchivo, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 3, useCORS: true, dpi: 300, letterRendering: true, logging: false, backgroundColor: '#ffffff' }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } };
+    try {
+      await html2pdf().set(opt).from(document.body).save();
+      alert("¡PDF descargado con calidad profesional!");
+    } catch (err) { alert("Error al generar PDF."); console.error(err); }
+    finally { toolbar.style.display = estadoOriginal.toolbar; header.style.display = estadoOriginal.header; contador.style.display = estadoOriginal.contador; paneles.style.gridTemplateColumns = estadoOriginal.grid; }
+  };
+
+  document.querySelectorAll('input[name="formatoPie"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      document.getElementById('contenedorPrefijo').style.display = this.value === 'prefijoPersonalizado' ? 'block' : 'none';
+    });
+  });
+
+  function aplicarFormatoPie() {
+    const seleccionado = document.querySelector('input[name="formatoPie"]:checked').value;
+    formatoPie = seleccionado;
+    if (seleccionado === 'prefijoPersonalizado') prefijoPersonalizado = document.getElementById('prefijoPersonalizado').value.trim();
+    else prefijoPersonalizado = "";
+    document.getElementById('modalFormatoPie').style.display = 'none';
+    generarPaneles();
+  }
 
   function aplicarMembrete() {
     membreteGlobal = document.getElementById('membreteTextarea').value;
@@ -342,7 +515,7 @@
     let tabla = `<table><thead><tr><th>SUMINISTRO</th><th>PÁGINA(S)</th></tr></thead><tbody>`;
     let paginaActual = 1;
     carpetas.forEach(carpeta => {
-      const porHoja = 4;
+      const porHoja = 3;
       const hojas = Math.ceil(carpeta.fotos.length / porHoja);
       const paginas = hojas === 1 ? paginaActual : `${paginaActual} - ${paginaActual + hojas - 1}`;
       tabla += `<tr><td><strong>${carpeta.nombre}</strong></td><td>${paginas}</td></tr>`;
@@ -353,24 +526,35 @@
     document.getElementById('modalIndice').style.display = 'flex';
   }
 
+  function descargarIndiceExcel() {
+    if (carpetas.length === 0) { alert("No hay carpetas cargadas."); return; }
+    let datos = [['SUMINISTRO', 'PÁGINA(S)']];
+    let paginaActual = 1;
+    carpetas.forEach(carpeta => {
+      const porHoja = 3;
+      const hojas = Math.ceil(carpeta.fotos.length / porHoja);
+      const paginas = hojas === 1 ? paginaActual : `${paginaActual} - ${paginaActual + hojas - 1}`;
+      datos.push([carpeta.nombre, paginas]);
+      paginaActual += hojas;
+    });
+    const ws = XLSX.utils.aoa_to_sheet(datos);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Índice");
+    XLSX.writeFile(wb, "Indice_Suministros_PF2_2025.xlsx");
+  }
+
   document.getElementById('btnDescargarPDF').onclick = () => {
     const element = document.getElementById('contenidoIndice');
-    const opt = {
-      margin: 20,
-      filename: 'Indice_Suministros_PF2_2025.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+    const opt = { margin: 20, filename: 'Indice_Suministros_PF2_2025.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
     html2pdf().set(opt).from(element).save();
   };
+  document.getElementById('btnDescargarExcel').onclick = descargarIndiceExcel;
 
   function aplicarTema(tema = {}) {
     const root = document.documentElement;
     const vals = {
       '--color-borde-a4': tema.colorBordeA4 ?? document.getElementById('colorBordeA4').value,
       '--grosor-borde-a4': (tema.grosorBordeA4 ?? document.getElementById('grosorBordeA4').value) + 'px',
-      '--color-fondo-a4': tema.colorFondoA4 ?? document.getElementById('colorFondoA4').value,
       '--color-titulo-linea': tema.colorLineaTitulo ?? document.getElementById('colorLineaTitulo').value,
       '--grosor-linea-titulo': (tema.grosorLineaTitulo ?? document.getElementById('grosorLineaTitulo').value) + 'px',
       '--color-membrete-bg': tema.colorMembreteBg ?? document.getElementById('colorMembreteBg').value,
@@ -380,60 +564,150 @@
       '--color-pie-bg-start': tema.colorPieStart ?? document.getElementById('colorPieStart').value,
       '--color-pie-bg-end': tema.colorPieEnd ?? document.getElementById('colorPieEnd').value,
       '--color-pie-texto': tema.colorPieTexto ?? document.getElementById('colorPieTexto').value,
+      '--color-borde-fotos': tema.colorBordeFotos ?? document.getElementById('colorBordeFotos').value,
+      '--grosor-borde-fotos': (tema.grosorBordeFotos ?? document.getElementById('grosorBordeFotos').value) + 'px',
       '--opacidad-fondo-imagen': (tema.opacidadFondo ?? document.getElementById('opacidadFondo').value)/100,
       '--fondo-imagen-a4': tema.fondoImagen ?? getComputedStyle(root).getPropertyValue('--fondo-imagen-a4').trim()
     };
     Object.keys(vals).forEach(k => root.style.setProperty(k, vals[k]));
   }
-  document.querySelectorAll('#modalTemas input[type=color], #modalTemas input[type=range]').forEach(el => el.addEventListener('input', aplicarTema));
+
+  document.getElementById('grosorBordeA4').addEventListener('input', e => { document.getElementById('valGrosorBorde').textContent = e.target.value; aplicarTema(); });
+  document.getElementById('grosorLineaTitulo').addEventListener('input', e => { document.getElementById('valGrosorLinea').textContent = e.target.value; aplicarTema(); });
+  document.getElementById('grosorBordeFotos').addEventListener('input', e => { document.getElementById('valGrosorBordeFotos').textContent = e.target.value; aplicarTema(); });
   document.getElementById('opacidadFondo').addEventListener('input', e => { document.getElementById('valOpacidad').textContent = e.target.value; aplicarTema(); });
+
+  document.querySelectorAll('#modalTemas input[type=color], #modalTemas input[type=range], #modalTemas input[type=checkbox]').forEach(el => el.addEventListener('input', aplicarTema));
+
   document.getElementById('inputFondoImagen').addEventListener('change', e => {
     const file = e.target.files[0];
-    if (file) { const reader = new FileReader(); reader.onload = ev => aplicarTema({fondoImagen: `url(${ev.target.result})`}); reader.readAsDataURL(file); }
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = ev => aplicarTema({fondoImagen: `url(${ev.target.result})`});
+      reader.readAsDataURL(file);
+    }
   });
 
+  document.getElementById('mostrarMarcoA4').addEventListener('change', function() {
+    const checked = this.checked;
+    const root = document.documentElement;
+    if (checked) {
+      root.style.setProperty('--grosor-borde-a4', document.getElementById('grosorBordeA4').value + 'px');
+      root.style.setProperty('--color-borde-a4', document.getElementById('colorBordeA4').value);
+    } else {
+      root.style.setProperty('--grosor-borde-a4', '0px');
+      root.style.setProperty('--color-borde-a4', 'transparent');
+    }
+  });
+  document.getElementById('mostrarMarcoA4').dispatchEvent(new Event('change'));
+
   document.getElementById('inputCarpeta').addEventListener('change', e => {
-    const archivos = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+    const files = e.target.files;
+    if (!files || files.length === 0) {
+      alert("No se seleccionaron archivos. Recuerda seleccionar una CARPETA completa.");
+      return;
+    }
+
+    const archivos = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (archivos.length === 0) {
+      alert("No se encontraron imágenes en la carpeta seleccionada.");
+      return;
+    }
+
     const grupos = {};
     archivos.forEach(f => {
-      const carpeta = (f.webkitRelativePath || f.name).split('/')[0];
+      let relativePath = f.webkitRelativePath || '';
+      if (!relativePath) {
+        const parts = f.name.split('/');
+        relativePath = parts.slice(0, -1).join('/');
+      }
+      const parts = relativePath.split(/[/\\]/);
+      let carpeta = 'Sin carpeta';
+      if (parts.length > 1) {
+        carpeta = parts[parts.length - 2];
+      }
       if (!grupos[carpeta]) grupos[carpeta] = [];
       grupos[carpeta].push(f);
     });
+
     Object.keys(grupos).forEach(nombre => {
       const fotos = grupos[nombre].sort((a,b)=>a.name.localeCompare(b.name));
       const existente = carpetas.find(c=>c.nombre===nombre);
-      if (existente) existente.fotos.push(...fotos.map(f=>({file:f,x:0,y:0,scale:0.5,rotation:0})));
-      else carpetas.push({nombre,fotos:fotos.map(f=>({file:f,x:0,y:0,scale:0.5,rotation:0})),nombresFijos:null});
+      if (existente) {
+        existente.fotos.push(...fotos.map(f=>({file:f,x:0,y:0,scale:1.0,rotation:0})));
+      } else {
+        carpetas.push({nombre,fotos:fotos.map(f=>({file:f,x:0,y:0,scale:1.0,rotation:0})),nombresFijos:null});
+      }
     });
+
+    alert(`¡Cargadas ${Object.keys(grupos).length} carpetas con éxito! (${archivos.length} fotos)`);
     generarPaneles();
   });
 
+  // CARGA ZIP - SOLUCIÓN FINAL (SIN GUION Y SIN ERRORES DE CODIFICACIÓN)
   document.getElementById('inputZip').addEventListener('change', async e => {
     const file = e.target.files[0];
     if (!file) return;
     document.getElementById('progreso').textContent = `Cargando ${file.name}...`;
     try {
       const zip = await JSZip.loadAsync(file);
+
       const grupos = {};
-      for (const [ruta,entry] of Object.entries(zip.files)) {
-        if (entry.dir || !/\.(jpe?g|png|gif|webp)$/i.test(ruta)) continue;
-        const partes = ruta.split(/[/\\]/);
-        const carpeta = partes.length>1 ? partes.slice(0,-1).join('/') : 'Sin carpeta';
+
+      for (const [rutaOriginal, entry] of Object.entries(zip.files)) {
+        if (entry.dir || !/\.(jpe?g|png|gif|webp)$/i.test(rutaOriginal)) continue;
+
+        let rutaCorregida = rutaOriginal
+          .replace(/\u00c3\u00b1/g, 'ñ')
+          .replace(/\u0004/g, 'ñ')
+          .replace(/\u00c3\u0091/g, 'Ñ')
+          .replace(/\u00c3\u00a1/g, 'á')
+          .replace(/\u00c3\u00a9/g, 'é')
+          .replace(/\u00c3\u00ad/g, 'í')
+          .replace(/\u00c3\u00b3/g, 'ó')
+          .replace(/\u00c3\u00ba/g, 'ú')
+          .replace(/\u00c3\u0081/g, 'Á')
+          .replace(/\u00c3\u0089/g, 'É')
+          .replace(/\u00c3\u008d/g, 'Í')
+          .replace(/\u00c3\u0093/g, 'Ó')
+          .replace(/\u00c3\u009a/g, 'Ú')
+          .replace(/\u00c3\u00a4/g, 'ä')
+          .replace(/\u00c3\u00ab/g, 'ë')
+          .replace(/\u00c3\u00ef/g, 'ï')
+          .replace(/\u00c3\u00b6/g, 'ö')
+          .replace(/\u00c3\u00bc/g, 'ü');
+
+        const partes = rutaCorregida.split(/[/\\]/);
+        const nombreArchivo = partes[partes.length - 1];
+        let carpeta = 'Sin carpeta';
+        if (partes.length > 1) {
+          carpeta = partes[partes.length - 2];
+        }
+
         const blob = await entry.async('blob');
-        const archivo = new File([blob], partes[partes.length-1], {type:blob.type});
-        if (!grupos[carpeta]) grupos[carpeta]=[];
-        grupos[carpeta].push(archivo);
+        const archivoCorregido = new File([blob], nombreArchivo, {type: blob.type});
+
+        if (!grupos[carpeta]) grupos[carpeta] = [];
+        grupos[carpeta].push(archivoCorregido);
       }
+
       Object.keys(grupos).forEach(nombre => {
-        const fotos = grupos[nombre].sort((a,b)=>a.name.localeCompare(b.name));
-        const existente = carpetas.find(c=>c.nombre===nombre);
-        if (existente) existente.fotos.push(...fotos.map(f=>({file:f,x:0,y:0,scale:0.5,rotation:0})));
-        else carpetas.push({nombre,fotos:fotos.map(f=>({file:f,x:0,y:0,scale:0.5,rotation:0})),nombresFijos:null});
+        const fotos = grupos[nombre].sort((a,b) => a.name.localeCompare(b.name));
+        const existente = carpetas.find(c => c.nombre === nombre);
+        if (existente) {
+          existente.fotos.push(...fotos.map(f => ({file: f, x:0, y:0, scale:1.0, rotation:0})));
+        } else {
+          carpetas.push({nombre, fotos: fotos.map(f => ({file: f, x:0, y:0, scale:1.0, rotation:0})), nombresFijos: null});
+        }
       });
+
       document.getElementById('progreso').textContent = `ZIP cargado: ${Object.keys(grupos).length} carpetas`;
       generarPaneles();
-    } catch(err) { alert('Error ZIP: '+err.message); document.getElementById('progreso').textContent='Error'; }
+    } catch(err) {
+      alert('Error al cargar ZIP: ' + err.message + '\nRecomendación: Usa 7-Zip y selecciona UTF-8 al comprimir.');
+      document.getElementById('progreso').textContent = 'Error';
+      console.error(err);
+    }
   });
 
   document.getElementById('excelFile').addEventListener('change', e => {
@@ -466,6 +740,7 @@
           } else {
             rows.forEach(r=>{ if(r[0]){ const cod=String(r[0]).trim().toUpperCase();
               baseDatos[cod]={usuario:String(r[1]||"").trim(),tipo:String(r[2]||"").trim(),nuevo:String(r[3]||"").trim(),
+                fecha:obtenerFechaExcel(r[3]),
                 categoria:String(r[4]||"").trim(),zona:String(r[5]||"").trim(),direccion:String(r[6]||"").trim()};
             }});
           }
@@ -502,7 +777,6 @@
     const temaActual = {
       colorBordeA4: getComputedStyle(document.documentElement).getPropertyValue('--color-borde-a4').trim(),
       grosorBordeA4: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--grosor-borde-a4')),
-      colorFondoA4: getComputedStyle(document.documentElement).getPropertyValue('--color-fondo-a4').trim(),
       colorLineaTitulo: getComputedStyle(document.documentElement).getPropertyValue('--color-titulo-linea').trim(),
       grosorLineaTitulo: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--grosor-linea-titulo')),
       colorMembreteBg: getComputedStyle(document.documentElement).getPropertyValue('--color-membrete-bg').trim(),
@@ -512,6 +786,8 @@
       colorPieStart: getComputedStyle(document.documentElement).getPropertyValue('--color-pie-bg-start').trim(),
       colorPieEnd: getComputedStyle(document.documentElement).getPropertyValue('--color-pie-bg-end').trim(),
       colorPieTexto: getComputedStyle(document.documentElement).getPropertyValue('--color-pie-texto').trim(),
+      colorBordeFotos: getComputedStyle(document.documentElement).getPropertyValue('--color-borde-fotos').trim(),
+      grosorBordeFotos: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--grosor-borde-fotos')),
       opacidadFondo: Math.round(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--opacidad-fondo-imagen'))*100),
       fondoImagen: getComputedStyle(document.documentElement).getPropertyValue('--fondo-imagen-a4').trim()
     };
@@ -520,11 +796,14 @@
       version:"1.5",
       fecha:new Date().toISOString(),
       membrete: membreteGlobal,
-      mostrarInfo, mostrarMembreteGlobal, mostrarCodigoEnPie, mostrarTitulo,
+      mostrarInfo, mostrarMembreteGlobal, mostrarTitulo,
       baseDatos:JSON.stringify(baseDatos),
       descripcionesActuales,
       piesPersonalizados,
+      formatoPie,
+      prefijoPersonalizado,
       tema: temaActual,
+      paginasBloqueadas,
       carpetas:[]
     };
 
@@ -556,12 +835,14 @@
       membreteGlobal = p.membrete || membreteGlobal;
       mostrarInfo=p.mostrarInfo??true;
       mostrarMembreteGlobal=p.mostrarMembreteGlobal??true;
-      mostrarCodigoEnPie=p.mostrarCodigoEnPie??true;
       mostrarTitulo = p.mostrarTitulo ?? true;
       baseDatos=JSON.parse(p.baseDatos||"{}");
       if(p.descripcionesActuales) actualizarDescripciones(p.descripcionesActuales);
       if(p.piesPersonalizados) piesPersonalizados = p.piesPersonalizados;
+      if(p.formatoPie !== undefined) formatoPie = p.formatoPie;
+      if(p.prefijoPersonalizado !== undefined) prefijoPersonalizado = p.prefijoPersonalizado;
       if(p.tema) aplicarTema(p.tema);
+      if(p.paginasBloqueadas) paginasBloqueadas = p.paginasBloqueadas;
       carpetas=[];
       for(const c of p.carpetas){
         const fotos=[];
@@ -572,9 +853,9 @@
         }
         carpetas.push({nombre:c.nombre,fotos,nombresFijos:c.nombresFijos});
       }
-      ["btnInfo","btnMembrete","btnCodigo","btnTitulo"].forEach(id=>
+      ["btnInfo","btnMembrete","btnTitulo"].forEach(id=>
         document.getElementById(id).classList.toggle('activo',
-          id==="btnInfo"?mostrarInfo:id==="btnMembrete"?mostrarMembreteGlobal:id==="btnCodigo"?mostrarCodigoEnPie:mostrarTitulo));
+          id==="btnInfo"?mostrarInfo:id==="btnMembrete"?mostrarMembreteGlobal:mostrarTitulo));
       generarPaneles();
       alert("Proyecto cargado correctamente");
     }catch(err){alert("Error: "+err.message);}
@@ -585,87 +866,135 @@
     if(!carpetas.length){ document.getElementById('contador').textContent="0 carpetas • 0 fotos • 0 hojas"; return; }
     const membrete = membreteGlobal.replace(/\n/g,'<br>');
     let totalFotos=0, totalHojas=0;
+    let totalHojasAnterior = 0;
 
     carpetas.forEach((carpeta,idxC)=>{
-      const porHoja = 4;
+      const porHoja = 3;
       const hojas = Math.ceil(carpeta.fotos.length / porHoja);
       totalHojas += hojas; totalFotos += carpeta.fotos.length;
-      const info = baseDatos[carpeta.nombre.toUpperCase()] || {};
+      const nombreUpper = carpeta.nombre.trim().toUpperCase();
+      let info = baseDatos[nombreUpper] || {};
+      if (!info.usuario) {
+        for (const key of Object.keys(baseDatos)) {
+          const keyUpper = key.trim().toUpperCase();
+          if (nombreUpper.includes(keyUpper) || keyUpper.includes(nombreUpper)) {
+            info = baseDatos[key];
+            break;
+          }
+        }
+      }
 
       const lineas=[];
-      let l1=`SUMINISTRO: ${carpeta.nombre}`;
-      if(info.usuario?.trim()) l1+=` ── ${info.usuario.trim()}`;
+      let l1=`CODIGO DE SUMINISTRO: ${carpeta.nombre}`;
+      if(info.usuario?.trim()) l1+=` ── PROPIETARIO: ${info.usuario.trim()}`;
       lineas.push(`<div>${l1}</div>`);
       if(info.direccion?.trim()) lineas.push(`<div>DIRECCIÓN: ${info.direccion.trim()}</div>`);
       let l3=[];
       if(info.zona?.trim()) l3.push(`ZONA: ${info.zona.trim()}`);
-      const med=[info.tipo,info.nuevo].filter(x=>x?.trim()).join(" ").trim();
-      if(med) l3.push(`MEDIDOR: ${med}`);
-      if(info.categoria?.trim()) l3.push(`CATEGORÍA: ${info.categoria.trim()}`);
+      if(info.tipo?.trim()) l3.push(`DIRECCION: ${info.tipo.trim()}`);
+      if(info.categoria?.trim()) l3.push(`Nº MEDIDOR: ${info.categoria.trim()}`);
+      const fechaVal = (info.fecha || obtenerFechaExcel(info.nuevo) || "").trim();
+      if(fechaVal) l3.push(`FECHA: ${fechaVal}`);
       if(l3.length>0) lineas.push(`<div>${l3.join(" ── ")}</div>`);
       const infoHTML=lineas.length>0?lineas.join(""):"";
 
       for(let h=0; h<hojas; h++){
         const inicio = h * porHoja;
         const fotosHoja = carpeta.fotos.slice(inicio, inicio + porHoja);
+        const paginaId = `c${idxC}-h${h}`;
+        const bloqueada = false;
+
         const panel = document.createElement('div');
         panel.className = 'a4';
+        panel.dataset.paginaId = paginaId;
+
         panel.innerHTML = `
           ${mostrarTitulo ? `<h1>PANEL FOTOGRÁFICO DEL PROYECTO</h1>` : ''}
           ${mostrarMembreteGlobal ? `<div class="membrete">${membrete}</div>` : ''}
-          ${mostrarInfo && infoHTML ? `<div class="info-bloque">${infoHTML}</div>` : ''}
           <div class="fotos">
             ${fotosHoja.map((f,i)=>{
               const idx = inicio + i;
               const num = (idx+1).toString().padStart(2,'0');
-              const desc = (carpeta.nombresFijos && idx < carpeta.nombresFijos.length) ? carpeta.nombresFijos[idx] : f.file.name.split('.').slice(0,-1).join('.');
-              const textoPie = piesPersonalizados[`${idxC}-${idx}`] !== undefined 
-                ? piesPersonalizados[`${idxC}-${idx}`]
-                : (mostrarCodigoEnPie ? `IMG. ${num}: Suministro ${carpeta.nombre} - ${desc}` : `IMG. ${num} – ${desc}`);
+              const nombreCrudo = f.file.name.split('.').slice(0,-1).join('.');
+              const desc = (carpeta.nombresFijos && idx < carpeta.nombresFijos.length) 
+                ? carpeta.nombresFijos[idx] 
+                : decodificarNombreArchivo(nombreCrudo);
+
+              let textoPie = piesPersonalizados[`${idxC}-${idx}`];
+              if (textoPie === undefined) {
+                const numImg = `IMG. ${num}`;
+                let prefijo = "";
+                if (formatoPie === "conSuministro") prefijo = `${numImg}: Suministro ${carpeta.nombre}`;
+                else if (formatoPie === "soloImg") prefijo = numImg;
+                else if (formatoPie === "prefijoPersonalizado" && prefijoPersonalizado) prefijo = `${numImg} ${prefijoPersonalizado}`;
+                else if (formatoPie === "ocultar") textoPie = "";
+
+                if (formatoPie !== "ocultar") {
+                  textoPie = prefijo;
+                }
+              }
+
               const src = URL.createObjectURL(f.file);
               return `
-              <div class="foto" draggable="true" data-c="${idxC}" data-i="${idx}">
-                <div class="acciones">
+              <div class="foto" draggable="${!bloqueada}" data-c="${idxC}" data-i="${idx}" data-pagina="${paginaId}">
+                <div class="acciones" style="${bloqueada ? 'display:none' : ''}">
                   <button class="eliminar" onclick="event.stopPropagation();eliminarFoto(${idxC},${idx})">X</button>
                   <button class="rotar-izq" onclick="event.stopPropagation();rotar(${idxC},${idx},-90)">↺</button>
                   <button class="rotar-der" onclick="event.stopPropagation();rotar(${idxC},${idx},90)">↻</button>
                   <button class="reset" onclick="event.stopPropagation();resetFoto(${idxC},${idx})">↻</button>
                 </div>
-                <div class="foto-contenedor" onwheel="wheel(event,${idxC},${idx})" onmousedown="startDrag(event,${idxC},${idx})">
+                <div class="foto-contenedor" onwheel="${!bloqueada ? `wheel(event,${idxC},${idx})` : ''}" onmousedown="${!bloqueada ? `startDrag(event,${idxC},${idx})` : ''}" style="pointer-events:${bloqueada ? 'none' : 'auto'}">
                   <img src="${src}" class="foto-img" style="transform:translate(-50%,-50%) translate(${f.x}px,${f.y}px) scale(${f.scale}) rotate(${f.rotation}deg);">
                 </div>
-                <div class="pie" contenteditable="true">${textoPie}</div>
               </div>`;
             }).join('')}
-            ${Array(4 - fotosHoja.length).fill('<div class="foto" style="visibility:hidden;"></div>').join('')}
-          </div>`;
+            ${Array(3 - fotosHoja.length).fill('<div class="foto" style="visibility:hidden;"></div>').join('')}
+          </div>
+          ${mostrarInfo && infoHTML ? `<div class="info-bloque">${infoHTML}</div>` : ''}`;
+
+        const numeroPagina = totalHojasAnterior + h + 1;
+        const paginacion = document.createElement('div');
+        paginacion.className = 'paginacion';
+        paginacion.textContent = `PÁG. ${numeroPagina}`;
+        panel.appendChild(paginacion);
+
         cont.appendChild(panel);
       }
+      totalHojasAnterior += hojas;
     });
 
     document.getElementById('contador').textContent=`${carpetas.length} carpetas • ${totalFotos} fotos • ${totalHojas} hojas`;
   }
 
   let dragging=false, startX, startY, initX, initY;
-  function startDrag(e,c,i){if(e.button!==0)return;dragging=true;startX=e.clientX;startY=e.clientY;initX=carpetas[c].fotos[i].x;initY=carpetas[c].fotos[i].y;e.preventDefault();}
-  function wheel(e,c,i){e.preventDefault();const d=e.deltaY<0?1.1:0.9;carpetas[c].fotos[i].scale=Math.max(0.2,carpetas[c].fotos[i].scale*d);generarPaneles();}
-  window.addEventListener('mousemove',e=>{if(!dragging)return;const dx=e.clientX-startX;const dy=e.clientY-startY;
-    const f=document.querySelector('.foto:hover');if(f){const c=+f.dataset.c,i=+f.dataset.i;carpetas[c].fotos[i].x=initX+dx;carpetas[c].fotos[i].y=initY+dy;generarPaneles();}});
+  function startDrag(e,c,i){
+    const foto = e.target.closest('.foto');
+    if(!foto) return;
+    if(e.button!==0) return;
+    dragging=true; startX=e.clientX; startY=e.clientY; initX=carpetas[c].fotos[i].x; initY=carpetas[c].fotos[i].y; e.preventDefault();
+  }
+  function wheel(e,c,i){
+    const foto = e.target.closest('.foto');
+    if(!foto) return;
+    e.preventDefault(); const d=e.deltaY<0?1.1:0.9; carpetas[c].fotos[i].scale=Math.max(0.2,carpetas[c].fotos[i].scale*d); generarPaneles();
+  }
+  window.addEventListener('mousemove',e=>{if(!dragging)return; const dx=e.clientX-startX; const dy=e.clientY-startY;
+    const f=document.querySelector('.foto:hover'); if(f){ const c=+f.dataset.c,i=+f.dataset.i; carpetas[c].fotos[i].x=initX+dx; carpetas[c].fotos[i].y=initY+dy; generarPaneles(); }});
   window.addEventListener('mouseup',()=>dragging=false);
 
-  function rotar(c,i,g){carpetas[c].fotos[i].rotation=(carpetas[c].fotos[i].rotation+g+360)%360;generarPaneles();}
-  function resetFoto(c,i){carpetas[c].fotos[i]={file:carpetas[c].fotos[i].file,x:0,y:0,scale:0.5,rotation:0};generarPaneles();}
-  function eliminarFoto(c,i){carpetas[c].fotos.splice(i,1);if(carpetas[c].fotos.length===0)carpetas.splice(c,1);generarPaneles();}
+  function rotar(c,i,g){ carpetas[c].fotos[i].rotation=(carpetas[c].fotos[i].rotation+g+360)%360; generarPaneles(); }
+  function resetFoto(c,i){ carpetas[c].fotos[i]={file:carpetas[c].fotos[i].file,x:0,y:0,scale:1.0,rotation:0}; generarPaneles(); }
+  function eliminarFoto(c,i){ carpetas[c].fotos.splice(i,1); if(carpetas[c].fotos.length===0)carpetas.splice(c,1); generarPaneles(); }
 
-  document.addEventListener('dragstart',e=>{if(e.target.classList.contains('foto'))e.target.classList.add('dragging');});
+  document.addEventListener('dragstart',e=>{ const foto=e.target.closest('.foto'); if(foto) e.target.classList.add('dragging'); });
   document.addEventListener('dragend',e=>e.target.classList.remove('dragging'));
   document.addEventListener('dragover',e=>e.preventDefault());
   document.addEventListener('drop',e=>{
+    const dest=e.target.closest('.foto');
+    if(!dest) return;
     e.preventDefault();
     const src=document.querySelector('.foto.dragging');
-    if(!src)return;
-    const dest=e.target.closest('.foto');
-    if(!dest||src===dest)return;
+    if(!src) return;
     const sc=+src.dataset.c, si=+src.dataset.i, dc=+dest.dataset.c, di=+dest.dataset.i;
     const foto=carpetas[sc].fotos.splice(si,1)[0];
     carpetas[dc].fotos.splice(di,0,foto);
@@ -686,7 +1015,16 @@
         const idx = +fotoActiva.dataset.i;
         const suministro = carpetas[c].nombre;
         const num = (idx+1).toString().padStart(2,'0');
-        const texto = mostrarCodigoEnPie ? `IMG. ${num}: Suministro ${suministro} - ${txt}` : `IMG. ${num} – ${txt}`;
+        let texto = "";
+        if (formatoPie === "conSuministro") {
+          texto = `IMG. ${num}: Suministro ${suministro} ${txt}`;
+        } else if (formatoPie === "soloImg") {
+          texto = `IMG. ${num} ${txt}`;
+        } else if (formatoPie === "prefijoPersonalizado" && prefijoPersonalizado) {
+          texto = `IMG. ${num} ${prefijoPersonalizado} ${txt}`;
+        } else {
+          texto = txt;
+        }
         pie.textContent = texto;
         piesPersonalizados[`${c}-${idx}`] = texto;
         contextMenu.style.display = 'none';
