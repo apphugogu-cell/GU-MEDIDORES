@@ -106,6 +106,23 @@
       border: 2px solid #0066cc;
     }
 
+    .foto-fecha {
+      position: absolute;
+      bottom: 8px;
+      right: 13px;
+      background: rgba(0, 0, 0, 0.65);
+      color: #ffffff;
+      padding: 4px 9px;
+      font-size: 11pt;
+      font-weight: 900;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      z-index: 5;
+      pointer-events: none;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+      font-family: 'Montserrat', 'Inter', sans-serif;
+    }
+
     #contextMenu { position:absolute; background:white; border:3px solid #0066cc; border-radius:12px; box-shadow:0 10px 30px #0004; z-index:100000; padding:8px 0; display:none; min-width:340px; font-weight:bold; }
     .modal { display:none; position:fixed; inset:0; background:rgba(0,50,100,.97); z-index:10000; justify-content:center; align-items:center; backdrop-filter:blur(5px); }
     .modal-content { background:white; padding:40px; border-radius:20px; max-width:900px; width:90%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px #0005; }
@@ -203,7 +220,7 @@
     <div class="card-title">Índice / Exportar</div>
     <button class="btn-pro btn-ver42" id="btnGenerarIndice">Generar Índice</button>
     <button class="btn-pro btn-azul" id="btnImprimir">PDF / Imprimir</button>
-    <button class="btn-pro btn-rojo" id="btnDescargarPDFDirecto">Descargar PDF</button>
+    <button class="btn-pro btn-rojo" id="btnDescargarPDFDirecto" style="display:none;">Descargar PDF</button>
     <button class="btn-pro btn-rojo" id="btnLimpiar">Limpiar</button>
   </div>
 </div>
@@ -322,7 +339,7 @@
       <div style="display:flex; flex-direction:column; align-items:center; background:#eee; border-radius:12px; padding:15px;">
         <h3 style="margin:0 0 10px 0; color:var(--primario);">Previsualización</h3>
         <div id="previewA4" class="a4" style="width:210mm; height:297mm; max-width:90%; max-height:90vh; transform:scale(.8); transform-origin:top left; overflow:hidden; box-shadow:0 10px 10px rgba(0,0,0,0.3);">
-          <h1 style="font-size:19pt; text-align:center; margin:0 0 8mm; padding-bottom:6mm; border-bottom:var(--grosor-linea-titulo) double var(--color-titulo-linea); color:#003366;">PANEL FOTOGRÁFICO DEL PROYECTO</h1>
+          <h1 style="font-size:19pt; text-align:center; margin:0 0 8mm; padding-bottom:6mm; border-bottom:var(--grosor-linea-titulo) double var(--color-titulo-linea); color:#003366;">PANEL FOTOGRÁFICO - CUSCO</h1>
           <div class="membrete" style="background:var(--color-membrete-bg); color:var(--color-membrete-texto);">Adquisición de Medidor de Corriente de Agua - CUI 2574429</div>
           <div class="fotos">
             <div class="foto" style="border: var(--grosor-borde-fotos) solid var(--color-borde-fotos);">
@@ -336,7 +353,7 @@
             </div>
           </div>
           <div class="info-bloque" style="background:var(--color-info-bg); color:var(--color-info-texto);">
-            SUMINISTRO: 123456 – USUARIO: JUAN PEREZ<br>DIRECCIÓN: Av. Principal 123 – ZONA: Centro<br>MEDIDOR: Nuevo – CATEGORÍA: Residencial
+            CÓDIGO DE SUMINISTRO: 123456 – PROPIETARIO: JUAN PEREZ<br>DIRECCIÓN: Av. Principal 123 – ZONA: Centro<br>DIRECCIÓN: Nuevo – Nº MEDIDOR: Residencial
           </div>
         </div>
       </div>
@@ -896,13 +913,13 @@
       }
 
       const lineas=[];
-      let l1=`CODIGO DE SUMINISTRO: ${carpeta.nombre}`;
+      let l1=`CÓDIGO DE SUMINISTRO: ${carpeta.nombre}`;
       if(info.usuario?.trim()) l1+=` ── PROPIETARIO: ${info.usuario.trim()}`;
       lineas.push(`<div>${l1}</div>`);
       if(info.direccion?.trim()) lineas.push(`<div>DIRECCIÓN: ${info.direccion.trim()}</div>`);
       let l3=[];
       if(info.zona?.trim()) l3.push(`ZONA: ${info.zona.trim()}`);
-      if(info.tipo?.trim()) l3.push(`DIRECCION: ${info.tipo.trim()}`);
+      if(info.tipo?.trim()) l3.push(`DIRECCIÓN: ${info.tipo.trim()}`);
       if(info.categoria?.trim()) l3.push(`Nº MEDIDOR: ${info.categoria.trim()}`);
       const fechaVal = (info.fecha || obtenerFechaExcel(info.nuevo) || "").trim();
       if(fechaVal) l3.push(`FECHA: ${fechaVal}`);
@@ -959,6 +976,7 @@
                 <div class="foto-contenedor" onwheel="${!bloqueada ? `wheel(event,${idxC},${idx})` : ''}" onmousedown="${!bloqueada ? `startDrag(event,${idxC},${idx})` : ''}" style="pointer-events:${bloqueada ? 'none' : 'auto'}">
                   <img src="${src}" class="foto-img" style="transform:${transformBase} translate(${f.x}px,${f.y}px) scale(${f.scale}) rotate(${f.rotation}deg);">
                 </div>
+                ${fechaVal ? `<div class="foto-fecha">${fechaVal}</div>` : ''}
               </div>`;
             }).join('')}
             ${Array(3 - fotosHoja.length).fill('<div class="foto" style="visibility:hidden;"></div>').join('')}
