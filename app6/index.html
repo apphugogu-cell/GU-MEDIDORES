@@ -167,7 +167,7 @@
   <img src="logo.png" alt="Logo URALMO" class="logo-mascota" onerror="this.src='https://i.ibb.co/5Y2n7PZ/engineer-boy.png'">
   <div class="titulo-central">
     <h1>PANEL FOTOGRÁFICO</h1>
-    <div class="subtitle">GRUPO URALMO • PF2 2025</div>
+    <div class="subtitle">GRUPO URALMO • PF2/ CUSCO 2026</div>
   </div>
   <div class="cui-badge">HUGO URQUIAGA</div>
 </div>
@@ -433,7 +433,7 @@
 <script>
   let carpetas = [];
   let baseDatos = {};
-  let membreteGlobal = "Adquisición de Medidor de Corriente de Agua; en el Parque de Medidores de la EPS SEDALIB S.A y Ampliación de Cobertura de Micromedición - Provincias de Trujillo, Ascope, Chepén y el Distrito de Trujillo, Provincia Trujillo, Departamento La Libertad - Segunda Etapa con CUI N° 2574429";
+  let membreteGlobal = "ADQUISICION DE MEDIDOR DE CORRIENTE DE AGUA, EN EL(LA) PARQUE DE MEDIDORES DE LA EPS SEDALIB S.A Y AMPLIACIÓN DE COBERTURA DE MICROMEDICIÓN- PROVINCIAS DE TRUJILLO, ASCOPE, CHEPEN Y EL DISTRITO DE TRUJILLO, PROVINCIA TRUJILLO, DEPARTAMENTO LA LIBERTAD III Y IV ETAPA CON CUI 2574429";
   let mostrarInfo = true;
   let mostrarMembreteGlobal = false;
   let mostrarTitulo = true;
@@ -449,6 +449,14 @@
   let paginasBloqueadas = {};
   const contextMenu = document.getElementById('contextMenu');
   let fotoActiva = null;
+
+  function obtenerRangoNombreFoto(nombre) {
+    const n = nombre.toLowerCase().trim();
+    if (n.includes("medidor existente")) return 1;
+    if (n.includes("medidor instalado")) return 2;
+    if (n.includes("fachada de la vivienda")) return 3;
+    return 4;
+  }
 
   function decodificarNombreArchivo(nombre) {
     try {
@@ -657,7 +665,12 @@
     });
 
     Object.keys(grupos).forEach(nombre => {
-      const fotos = grupos[nombre].sort((a,b)=>a.name.localeCompare(b.name));
+      const fotos = grupos[nombre].sort((a,b) => {
+        const rA = obtenerRangoNombreFoto(a.name);
+        const rB = obtenerRangoNombreFoto(b.name);
+        if (rA !== rB) return rA - rB;
+        return a.name.localeCompare(b.name);
+      });
       const existente = carpetas.find(c=>c.nombre===nombre);
       if (existente) {
         existente.fotos.push(...fotos.map(f=>({file:f,x:0,y:0,scale:1.0,rotation:0})));
@@ -718,7 +731,12 @@
       }
 
       Object.keys(grupos).forEach(nombre => {
-        const fotos = grupos[nombre].sort((a,b) => a.name.localeCompare(b.name));
+        const fotos = grupos[nombre].sort((a,b) => {
+          const rA = obtenerRangoNombreFoto(a.name);
+          const rB = obtenerRangoNombreFoto(b.name);
+          if (rA !== rB) return rA - rB;
+          return a.name.localeCompare(b.name);
+        });
         const existente = carpetas.find(c => c.nombre === nombre);
         if (existente) {
           existente.fotos.push(...fotos.map(f => ({file: f, x:0, y:0, scale:1.0, rotation:0})));
